@@ -1,0 +1,16 @@
+Neam (នាម): Khmer news named entity recognition
+Copyright 2026 MoriartyPuth
+
+This product includes or is derived from the following third-party works:
+
+- Khmer ALBERT Small (seanghay/albert-khmer-small), Apache License 2.0.
+  https://huggingface.co/seanghay/albert-khmer-small
+- fiNERweb (whoisjones/fiNERweb), MIT License. Used as training data.
+  https://huggingface.co/datasets/whoisjones/fiNERweb
+- WikiANN (unimelb-nlp/wikiann), derived from Wikipedia; license listed as unknown on the
+  Hugging Face Hub. Used as training data.
+  https://huggingface.co/datasets/unimelb-nlp/wikiann
+- khmer-nltk (word segmentation), used at runtime as a dependency.
+
+News articles used for training and evaluation remain the property of their publishers
+and are not redistributed in this repository or with the model.
