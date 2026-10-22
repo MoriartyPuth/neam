@@ -7,7 +7,7 @@ from neam.articles import MAX_INPUT_CHARS, extract_article_text
 from neam.inference import DEFAULT_MODEL, Neam
 
 EXAMPLES = [
-    ['ហ៊ុន សែន បានទៅប្រទេសចិន។'],
+    ['ស​ ភក្តី បានទៅប្រទេសចិន។'],
     ['ក្រសួងអប់រំ យុវជន និងកីឡា បានប្រកាសលទ្ធផលថ្មី។'],
     ['សាកលវិទ្យាល័យភូមិន្ទភ្នំពេញស្ថិតនៅរាជធានីភ្នំពេញ។'],
     ['សុខា និង ដារ៉ា រស់នៅរាជធានីភ្នំពេញ។'],
