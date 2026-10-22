@@ -27,6 +27,10 @@ character offsets in the original input. It was trained and evaluated on Khmer n
 > context windows and Khmer-specific display rules. Loading one member with the standard
 > `transformers` pipeline gives noticeably worse results.
 
+```bash
+pip install neam
+```
+
 ```python
 from neam import Neam
 
