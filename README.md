@@ -18,11 +18,14 @@ details and limitations.
 ## Install
 
 ```bash
-pip install -e .            # library
-pip install -e ".[app]"     # plus the web app
+pip install neam            # library
+pip install "neam[app]"     # plus the web app
 ```
 
 Python 3.10+. Install the PyTorch build that suits your machine first if you want GPU support.
+The model (about 113 MB) downloads from the Hugging Face Hub on first use.
+
+To work on the code itself, clone the repository and run `pip install -e ".[app]"`.
 
 ## Use
 
@@ -48,6 +51,8 @@ Each entity has `label`, `text`, `start`, `end` (Python character offsets into t
 `score`, the model's mean confidence, which is not a calibrated probability.
 
 ## Web app
+
+The web app is `app.py` in this repository. Run it from a clone after `pip install -e ".[app]"`:
 
 ```bash
 python app.py                      # http://127.0.0.1:7860

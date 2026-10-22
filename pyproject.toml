@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,23 @@ name = "neam"
 version = "0.1.0"
 description = "Neam (នាម): Khmer news named entity recognition (PER, ORG, LOC)"
 readme = "README.md"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Eav Puthcambo", email = "p.camboeav@gmail.com" }]
+keywords = ["khmer", "cambodia", "nlp", "ner", "named-entity-recognition", "low-resource", "albert", "khmer-nlp"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Text Processing :: Linguistic",
+]
 requires-python = ">=3.10"
 dependencies = [
   "torch>=2.0",
@@ -26,6 +42,8 @@ app = ["gradio>=4,<7"]
 
 [project.urls]
 Homepage = "https://github.com/MoriartyPuth/neam"
+Source = "https://github.com/MoriartyPuth/neam"
+Issues = "https://github.com/MoriartyPuth/neam/issues"
 Model = "https://huggingface.co/MoriartyPuth/neam"
 
 [tool.setuptools]
