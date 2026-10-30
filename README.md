@@ -17,6 +17,8 @@ details and limitations.
 
 **Paper:** [Neam: Open Named Entity Recognition for Khmer News with a Small ALBERT Ensemble](https://www.researchgate.net/publication/417187812_Neam_Open_Named_Entity_Recognition_for_Khmer_News_with_a_Small_ALBERT_Ensemble) (preprint, 2026).
 
+**How it was built:** [moriartyputh.github.io/neam](https://moriartyputh.github.io/neam/), a visual walkthrough of the pipeline, experiments and results.
+
 ## Install
 
 ```bash
