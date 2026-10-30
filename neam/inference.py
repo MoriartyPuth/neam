@@ -22,7 +22,7 @@ BOUNDARY_PUNCTUATION = frozenset({
 SENTENCE_PUNCTUATION = frozenset({'។', '៖', '៕', '៘', '៙', '៚', ';', ':', '!', '?'})
 _DOTTED_INITIALISM = regex.compile(r'(?:\p{L}\p{M}*\.){2,}$')
 _CLOSING_PAIRS = {')': '(', '»': '«'}
-RECONSTRUCTION_VERSION = 'model-punctuation-short-honorifics-nationality-v3'
+RECONSTRUCTION_VERSION = 'model-punctuation-short-honorifics-nationality-titles-whitespace-v4'
 # Hugging Face model ID used when no local model folder is given.
 DEFAULT_MODEL = 'MoriartyPuth/neam'
 # A model directory holding this file averages its members' word probabilities.
@@ -39,6 +39,15 @@ CONTEXT_WINDOWS = ('disjoint', 'overlap')
 # policy; X alone as a place stays LOC. Interim display rule until training data
 # teaches the distinction; strict model tags are unchanged.
 NATIONALITY_MARKERS = frozenset({'ជនជាតិ'})
+# Ceremonial titles and ranks stay outside PER spans under the annotation policy;
+# short honorifics such as លោក remain part of the name.
+CEREMONIAL_TITLES = frozenset({
+    'ឯកឧត្តម', 'ឯកឧត្ដម', 'លោកជំទាវ', 'សម្តេច', 'សម្ដេច', 'ឧកញ៉ា', 'អ្នកឧកញ៉ា', 'លោកបណ្ឌិត', 'បណ្ឌិត',
+})
+_RANK_MARKER = 'សេនីយ៍'  # military ranks: វរសេនីយ៍ឯក, ឧត្តមសេនីយ៍ទោ, ...
+# Parts that only continue a title (ឯកឧត្ដម សន្ដិ បណ្ឌិត); alone they can be part of a name.
+TITLE_CONTINUATIONS = frozenset({'សន្តិ', 'សន្ដិ'})
+_ZERO_WIDTH = frozenset({'\u200b', '\u200c', '\u200d'})
 PERSON_COORDINATION_FOLLOWERS = frozenset({
     'ដែល', 'បាន', 'កំពុង', 'នឹង', 'រស់', 'ជា', 'មកពី', 'ទៅ', 'នៅ',
 }) | BOUNDARY_PUNCTUATION
@@ -166,13 +175,41 @@ def clear_nationality_locations(words, tags):
     return result
 
 
+def _is_ceremonial_title(word):
+    return word in CEREMONIAL_TITLES or word.startswith(('សម្តេច', 'សម្ដេច')) or _RANK_MARKER in word
+
+
+def strip_ceremonial_titles(words, tags):
+    """Move a PER start past leading ceremonial titles when a name follows them."""
+    result = list(tags)
+    for i, tag in enumerate(tags):
+        if tag != 'B-PER' or not _is_ceremonial_title(words[i]):
+            continue
+        j = i
+        while (j < len(result) and result[j].endswith('-PER')
+               and (_is_ceremonial_title(words[j]) or words[j] in TITLE_CONTINUATIONS
+                    or not words[j].strip())):
+            j += 1
+        if j < len(result) and result[j] == 'I-PER':  # a name remains after the titles
+            for k in range(i, j):
+                result[k] = 'O'
+            result[j] = 'B-PER'
+    return result
+
+
 def prepare_display_tags(words, model_tags):
     """Keep model-labeled name punctuation, drop nationality LOCs, complete short prefixes."""
     if len(words) != len(model_tags):
         raise ValueError('Word/tag lengths differ.')
     cleaned = ['O' if word in SENTENCE_PUNCTUATION else tag
                for word, tag in zip(words, model_tags)]
-    return expand_entity_boundaries(words, clear_nationality_locations(words, cleaned))
+    expanded = expand_entity_boundaries(words, clear_nationality_locations(words, cleaned))
+    return strip_ceremonial_titles(words, expanded)
+
+
+def _outside_span(character):
+    """Characters never kept at a span edge: punctuation, whitespace, zero-width marks."""
+    return character in BOUNDARY_PUNCTUATION or character.isspace() or character in _ZERO_WIDTH
 
 
 def _name_end_punctuation(surface):
@@ -217,12 +254,13 @@ def collect_entities(text, words, tags, scores, model_tags=None):
         # Khmer punctuation is sometimes attached to a lexical token by the
         # segmenter (for example, "សុវិជាតិ៖"). Keep it outside the entity span.
         while (entity['start'] < entity['end']
-               and text[entity['start']] in BOUNDARY_PUNCTUATION):
+               and _outside_span(text[entity['start']])):
             entity['start'] += 1
             entity['_boundary_adjusted'] = True
         while (entity['end'] > entity['start']
-               and text[entity['end'] - 1] in BOUNDARY_PUNCTUATION):
-            if _name_end_punctuation(text[entity['start']:entity['end']]):
+               and _outside_span(text[entity['end'] - 1])):
+            if (text[entity['end'] - 1] in BOUNDARY_PUNCTUATION
+                    and _name_end_punctuation(text[entity['start']:entity['end']])):
                 break
             entity['end'] -= 1
             entity['_boundary_adjusted'] = True

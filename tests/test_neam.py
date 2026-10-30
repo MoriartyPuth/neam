@@ -161,6 +161,22 @@ class PreprocessingTests(unittest.TestCase):
         self.assertEqual(result[0]['end'], len(text) - 1)
         self.assertTrue(result[0]['boundary_adjusted'])
 
+    def test_ceremonial_titles_and_whitespace_stay_outside_spans(self):
+        def reconstruct(pieces, tags):
+            text, words, start = ''.join(pieces), [], 0
+            for piece in pieces:
+                words.append(Word(piece, start, start + len(piece)))
+                start += len(piece)
+            shown = prepare_display_tags(pieces, tags)
+            return [e['text'] for e in collect_entities(text, words, shown, [.9] * len(words), model_tags=tags)]
+        self.assertEqual(reconstruct(['ឯកឧត្តម', ' ', 'កែវ', ' ', 'សុវណ្ណ'], ['B-PER'] + ['I-PER'] * 4),
+                         ['កែវ សុវណ្ណ'])
+        self.assertEqual(reconstruct(['ឯកឧត្ដម', 'សន្ដិ', 'បណ្ឌិត', 'ឆៃ'], ['B-PER'] + ['I-PER'] * 3), ['ឆៃ'])
+        self.assertEqual(reconstruct(['សន្តិ', ' ', 'សុខា'], ['B-PER', 'I-PER', 'I-PER']), ['សន្តិ សុខា'])
+        self.assertEqual(reconstruct(['លោក', ' ', 'សុខា'], ['B-PER', 'I-PER', 'I-PER']), ['លោក សុខា'])
+        self.assertEqual(reconstruct(['Acme', ' Corp', ' ', 'បាន'], ['B-ORG', 'I-ORG', 'I-ORG', 'O']),
+                         ['Acme Corp'])
+
 
 def tiny_tokenizer():
     from tokenizers import Tokenizer
