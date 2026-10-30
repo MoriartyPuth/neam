@@ -44,6 +44,16 @@ use exclusive-end Python character offsets. Do not infer entities from a keyword
 - Products, aircraft models, applications, dates, quantities, and events without
   an organization sense are outside this three-label ontology and receive O.
   Named storms and their transliterations are O, not ORG or LOC.
+- A person named inside a trophy, cup or event name is O with the rest of the
+  event (ពានរង្វាន់សម្តេច…តេជោ ហ៊ុន សែន). (Owner decision, 2026-10-30.)
+- Sports teams and clubs are ORG over the whole name, including an attached
+  team designator and any province in it: ក្រុមបាល់ទាត់ខេត្តត្បូងឃ្មុំ,
+  ក្រុមខេត្តព្រះសីហនុ, ក្រុមភ្នំពេញក្រោន. (Owner decision, 2026-10-30.)
+- An acronym in brackets after a complete name is a separate ORG:
+  សមាគមធនាគារនៅកម្ពុជា and ABC in សមាគមធនាគារនៅកម្ពុជា (ABC). Brackets that are
+  part of the official name itself stay inside that span. (Owner decision, 2026-10-30.)
+- For monks, monastic titles and rank names stay outside PER: in
+  ព្រះគ្រូ សុវណ្ណរង្សី គង់សុវណ្ណ only គង់សុវណ្ណ is PER. (Owner decision, 2026-10-30.)
 - Label each occurrence in context. Repeated spellings need not have the same
   type. Article footers may contain author PER and publisher ORG mentions.
 - Preserve punctuation belonging to a named mention, including periods in
