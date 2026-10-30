@@ -244,7 +244,7 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
       <button aria-pressed="false" data-view="names">Find the names</button>
     </div>
     <div id="demo" class="demo kh" style="margin-top:18px"></div>
-    <div class="gloss" id="demo-note"></div>
+    <div class="gloss" id="demo-note" style="min-height:3.2em"></div>
     <p class="gloss"><i>Gloss:</i> "On this important occasion, [Mr. <span class="kh">ងួន ស្តេចភក្តី</span>]<sub>PER</sub>, personal adviser to Samdech Moha Borvor Thipadei [Hun Manet]<sub>PER</sub>, Prime Minister of [Cambodia]<sub>LOC</sub> and Secretary of State of the [Ministry of Cults and Religion]<sub>ORG</sub>…" · From a held-out Fresh News article.</p>
   </div>
   <div class="grid3" style="margin-top:16px">
@@ -464,7 +464,13 @@ document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',(
   document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));
   renderDemo(b.dataset.view);
 }));
-renderDemo('raw');
+// reserve the height of the tallest view so the page below never jumps
+function lockDemoHeight(){const d=document.getElementById('demo');d.style.minHeight='';let h=0;
+  for(const v of ['raw','words','names']){renderDemo(v);h=Math.max(h,d.offsetHeight);}
+  d.style.minHeight=h+'px';renderDemo(document.querySelector('.seg button[aria-pressed="true"]').dataset.view);}
+lockDemoHeight();
+(document.fonts&&document.fonts.ready||Promise.resolve()).then(lockDemoHeight);
+addEventListener('resize',()=>{clearTimeout(window._lh);window._lh=setTimeout(lockDemoHeight,200);});
 
 // ---------- pipeline ----------
 const STEPS=[
