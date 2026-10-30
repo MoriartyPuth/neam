@@ -22,6 +22,8 @@ metrics:
 Neam finds **people (PER), organizations (ORG) and places (LOC)** in Khmer text and returns
 character offsets in the original input. It was trained and evaluated on Khmer news.
 
+**Paper:** [Neam: Open Named Entity Recognition for Khmer News with a Small ALBERT Ensemble](https://www.researchgate.net/publication/417187812_Neam_Open_Named_Entity_Recognition_for_Khmer_News_with_a_Small_ALBERT_Ensemble) (preprint, 2026).
+
 > **Use the `neam` package to run this model.** It is an ensemble of seven ALBERT
 > checkpoints (`members/`), combined by `ensemble.json` with Viterbi decoding, overlapping
 > context windows and Khmer-specific display rules. Loading one member with the standard
@@ -119,6 +121,20 @@ and weeks as the held-out set, which may flatter the held-out score slightly.
 - **Segmentation.** It relies on khmer-nltk word segmentation. Unusual spellings and
   transliterated foreign names can be segmented in ways that hurt boundaries.
 - Scores in the output are model confidences, not calibrated probabilities of correctness.
+
+## Citation
+
+If you use Neam, please cite the preprint:
+
+```bibtex
+@misc{puthcambo2026neam,
+  title  = {Neam: Open Named Entity Recognition for Khmer News with a Small {ALBERT} Ensemble},
+  author = {{Eav Puthcambo}},
+  year   = {2026},
+  note   = {Preprint, ResearchGate},
+  url    = {https://www.researchgate.net/publication/417187812_Neam_Open_Named_Entity_Recognition_for_Khmer_News_with_a_Small_ALBERT_Ensemble}
+}
+```
 
 ## License and attribution
 

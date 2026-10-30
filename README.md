@@ -15,6 +15,8 @@ An entity counts only if both its boundaries and its type are exact. Retraining 
 different seeds gives about 86–87 on average. See [MODEL_CARD.md](MODEL_CARD.md) for the
 details and limitations.
 
+**Paper:** [Neam: Open Named Entity Recognition for Khmer News with a Small ALBERT Ensemble](https://www.researchgate.net/publication/417187812_Neam_Open_Named_Entity_Recognition_for_Khmer_News_with_a_Small_ALBERT_Ensemble) (preprint, 2026).
+
 ## Install
 
 ```bash
@@ -89,6 +91,20 @@ python -m unittest discover -s tests
 `scripts/export_model.py` packages a trained ensemble folder into the Hub layout
 (`ensemble.json` plus `members/`). Training code and research history are kept in a separate
 research repository.
+
+## Citation
+
+If you use Neam, please cite the preprint:
+
+```bibtex
+@misc{puthcambo2026neam,
+  title  = {Neam: Open Named Entity Recognition for Khmer News with a Small {ALBERT} Ensemble},
+  author = {{Eav Puthcambo}},
+  year   = {2026},
+  note   = {Preprint, ResearchGate},
+  url    = {https://www.researchgate.net/publication/417187812_Neam_Open_Named_Entity_Recognition_for_Khmer_News_with_a_Small_ALBERT_Ensemble}
+}
+```
 
 ## License
 
