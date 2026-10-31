@@ -238,6 +238,11 @@ def collect_entities(text, words, tags, scores, model_tags=None):
     for word, tag, score, model_tag in zip(words, repair_iob2(tags), scores, model_tags):
         if tag == 'O' or tag.startswith('B-'):
             active = None
+        elif active is not None and '\n' in text[active['end']:word.end]:
+            # A name never continues onto the next line (menus, lists, captions).
+            active = None
+            if not word.text.strip():
+                continue
         if tag == 'O':
             continue
         if active is None:
