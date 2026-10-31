@@ -36,6 +36,14 @@ class PreprocessingTests(unittest.TestCase):
         extracted = article_text_from_html(kampuchea)
         self.assertIn('អត្ថបទកម្ពុជា', extracted)
         self.assertNotIn('ព័ត៌មានពាក់ព័ន្ធ', extracted)
+        # English menus and footers around a Khmer article are dropped; inner lines stay.
+        framed = '<main><p>Home</p><p>News</p><p>ចំណងជើង</p><p>31-Oct-2026</p>' \
+                 + '<p>Ferdinand Marcos</p><p>' + ('ខ្លឹមសារ ' * 30) + '</p>' \
+                 + '<p>Ministry of Interior</p><p>All rights reserved</p></main>'
+        self.assertEqual(article_text_from_html(framed).splitlines(),
+                         ['ចំណងជើង', '31-Oct-2026', 'Ferdinand Marcos', ('ខ្លឹមសារ ' * 30).strip()])
+        english = '<main><p>Only English text here.</p></main>'
+        self.assertEqual(article_text_from_html(english), 'Only English text here.')
         with self.assertRaisesRegex(ValueError, 'public internet'):
             _validate_public_url('http://127.0.0.1/private')
 
@@ -153,6 +161,14 @@ class PreprocessingTests(unittest.TestCase):
                                   ['B-PER', 'I-PER', 'B-LOC'], [.9, .7, .8])
         self.assertEqual(result[0]['text'], 'a b')
         self.assertAlmostEqual(result[0]['score'], .8)
+
+    def test_entity_does_not_continue_onto_next_line(self):
+        text = 'Ministry of Interior\nGeneral Department'
+        words = [Word('Ministry', 0, 8), Word(' ', 8, 9), Word('of', 9, 11), Word(' ', 11, 12),
+                 Word('Interior', 12, 20), Word('\n', 20, 21), Word('General', 21, 28),
+                 Word(' ', 28, 29), Word('Department', 29, 39)]
+        result = collect_entities(text, words, ['B-ORG'] + ['I-ORG'] * 8, [.9] * 9)
+        self.assertEqual([e['text'] for e in result], ['Ministry of Interior', 'General Department'])
 
     def test_attached_khmer_punctuation_is_trimmed_from_entity(self):
         text = 'សុខា៖'

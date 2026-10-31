@@ -7,6 +7,7 @@ from urllib.parse import urljoin, urlparse
 MAX_INPUT_CHARS = 20_000
 MAX_WEB_BYTES = 5 * 1024 * 1024
 ARTICLE_UI_LINES = frozenset({'Share', 'Tweet', 'Print', 'Facebook', 'Telegram'})
+_KHMER = re.compile('[ក-៿]')
 
 
 def trim_text(text, max_chars=MAX_INPUT_CHARS):
@@ -54,7 +55,18 @@ def article_text_from_html(html):
             break
     root = root or soup.find('main') or soup.find(attrs={'role': 'main'}) or soup.body or soup
     lines = [re.sub(r'\s+', ' ', line).strip() for line in root.get_text('\n').splitlines()]
-    return '\n'.join(line for line in lines if line and line not in ARTICLE_UI_LINES)
+    return '\n'.join(trim_non_khmer_edges(
+        [line for line in lines if line and line not in ARTICLE_UI_LINES]))
+
+
+def trim_non_khmer_edges(lines):
+    """On a Khmer page, drop the lines before the first and after the last Khmer line.
+
+    Those are site menus and footers. Non-Khmer lines between Khmer lines are kept,
+    because some sites put a foreign name or a date on its own line.
+    """
+    khmer = [i for i, line in enumerate(lines) if _KHMER.search(line)]
+    return lines[khmer[0]:khmer[-1] + 1] if khmer else lines
 
 
 def extract_article_text(url, max_chars=MAX_INPUT_CHARS):

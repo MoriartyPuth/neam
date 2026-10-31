@@ -54,6 +54,11 @@ use exclusive-end Python character offsets. Do not infer entities from a keyword
   part of the official name itself stay inside that span. (Owner decision, 2026-10-30.)
 - For monks, monastic titles and rank names stay outside PER: in
   ព្រះគ្រូ សុវណ្ណរង្សី គង់សុវណ្ណ only គង់សុវណ្ណ is PER. (Owner decision, 2026-10-30.)
+- A provincial or capital hall named with its place (សាលាខេត្ត…, សាលារាជធានី…) is LOC
+  where it is the venue, as for airports: in នៅសាលប្រជុំតូច សាលាខេត្តកំពង់ចាម,
+  សាលាខេត្តកំពង់ចាម is LOC. The administration acting as a body is ORG
+  (រដ្ឋបាលខេត្តកំពង់ចាម). An unnamed room such as សាលប្រជុំតូច is O, and so is a
+  designator without a name (ខេត្ត in ខេត្តសម្ព័ន្ធមេត្រីភាព). (Owner decision, 2026-10-31.)
 - Label each occurrence in context. Repeated spellings need not have the same
   type. Article footers may contain author PER and publisher ORG mentions.
 - Preserve punctuation belonging to a named mention, including periods in
