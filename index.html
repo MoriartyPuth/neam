@@ -240,7 +240,7 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
 <nav class="top"><div class="wrap">
   <a class="brand" href="#top">Neam <span class="kh">នាម</span></a>
   <div class="links">
-    <a href="#problem">Problem</a><a href="#score">Score</a><a href="#decisions">Decisions</a><a href="#journey">Journey</a><a href="#results">Results</a>
+    <a href="#problem">Problem</a><a href="#score">Score</a><a href="#decisions">Decisions</a><a href="#journey">Journey</a><a href="#results">Results</a><a href="#use">Use it</a>
   </div>
   <button class="iconbtn" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
 </div></nav>
@@ -476,6 +476,40 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
   </div>
 </div></section>
 
+<!-- ===================== USE ===================== -->
+<section id="use"><div class="wrap">
+  <div class="eyebrow">Use it</div>
+  <h2 class="reveal">Try Neam yourself</h2>
+  <div class="usestack">
+    <div class="card reveal">
+      <h3>Install and run</h3>
+      <p class="small muted" style="margin:6px 0 4px">Runs offline. The first run downloads the model (263 MB).</p>
+      <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>pip install neam</code></pre></div>
+      <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>from neam import Neam
+ner = Neam.from_pretrained("MoriartyPuth/neam")
+result = ner.predict("លោក ហ៊ុន ម៉ាណែត បានជួបជាមួយក្រសួងសុខាភិបាល")
+for e in result["entities"]:
+    print(e["label"], e["text"], e["start"], e["end"])</code></pre></div>
+    </div>
+    <div class="card reveal">
+      <h3>Cite</h3>
+      <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>@misc{puthcambo2026neam,
+  title  = {Neam: Open Named Entity Recognition
+            for Khmer News with a Small {ALBERT} Ensemble},
+  author = {{Eav Puthcambo}},
+  year   = {2026},
+  note   = {Preprint, ResearchGate},
+  url    = {https://www.researchgate.net/publication/417187812}
+}</code></pre></div>
+      <div class="btns" style="margin-top:16px">
+        <a class="btn primary" href="https://www.researchgate.net/publication/417187812_Neam_Open_Named_Entity_Recognition_for_Khmer_News_with_a_Small_ALBERT_Ensemble">Paper</a>
+        <a class="btn" href="https://github.com/MoriartyPuth/neam">GitHub</a>
+        <a class="btn" href="https://huggingface.co/MoriartyPuth/neam">Hugging Face</a>
+        <a class="btn" href="https://pypi.org/project/neam/">PyPI</a>
+      </div>
+    </div>
+  </div>
+</div></section>
 
 
 <script>
