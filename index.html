@@ -79,10 +79,6 @@ header.hero{padding:64px 0 36px}
 .herotext.on .ent{opacity:1}
 .herotext .ent:nth-of-type(2){transition-delay:.5s}.herotext .ent:nth-of-type(3){transition-delay:1s}
 .gloss{font-size:14px;color:var(--muted);margin-top:6px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
-.stat b{display:block;font-size:30px;letter-spacing:-.02em;line-height:1.1}
-.stat span{font-size:13px;color:var(--muted)}
 /* problem */
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .lang{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
@@ -216,8 +212,6 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
 }
 @media (max-width:520px){
   .wrap{padding:0 16px}
-  .stats{grid-template-columns:1fr 1fr 1fr}
-  .stat b{font-size:22px}
   .dtop{grid-template-columns:auto 1fr;padding:18px 16px 0}
   .dtop .gain{grid-column:1/-1;justify-self:start}
   .why{margin:14px 16px 0}
@@ -262,11 +256,6 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
       <span class="ent PER"><svg class="ic"><use href="#i-per"/></svg>លោក ហ៊ុន ម៉ាណែត</span> បានជួបជាមួយ<span class="ent ORG"><svg class="ic"><use href="#i-org"/></svg>ក្រសួងសុខាភិបាល</span>នៅ<span class="ent LOC"><svg class="ic"><use href="#i-loc"/></svg>រាជធានីភ្នំពេញ</span>។
     </div>
     <div class="gloss">"Mr. Hun Manet met with the Ministry of Health in Phnom Penh." · Real output of Neam.</div>
-  </div>
-  <div class="stats">
-    <div class="stat"><b>87</b><span>score out of 100 on unseen news</span></div>
-    <div class="stat"><b>62→87</b><span>from first version to release</span></div>
-    <div class="stat"><b>~2 s</b><span>per article, on a laptop</span></div>
   </div>
 </div></header>
 
