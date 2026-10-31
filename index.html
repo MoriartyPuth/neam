@@ -190,6 +190,7 @@ svg text{fill:var(--muted);font-family:Inter,sans-serif}
 .range .lab{position:absolute;top:34px;font-size:12px;color:var(--muted);transform:translateX(-50%);white-space:nowrap}
 /* use */
 .usestack{display:flex;flex-direction:column;gap:16px;margin-top:20px}
+.demo{display:block;width:100%;height:auto;aspect-ratio:8/5;margin-top:14px;border-radius:12px;border:1px solid var(--line);background:#fff}
 .codebox{position:relative;margin-top:10px}
 .codebox pre{padding-right:76px}
 pre{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto;font-size:13.5px;line-height:1.6;margin:0}
@@ -482,6 +483,11 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
   <h2 class="reveal">Try Neam yourself</h2>
   <div class="usestack">
     <div class="card reveal">
+      <h3>See it in action</h3>
+      <p class="small muted" style="margin:6px 0 0">The Neam app on a laptop: type or paste Khmer text, and the names are marked with their type and position. Recorded at real speed.</p>
+      <video class="demo" id="demo" src="neam-demo.mp4" poster="neam-demo-poster.jpg" controls muted loop playsinline preload="metadata" aria-label="Screen recording of the Neam app finding people, organizations and places in two Khmer sentences"></video>
+    </div>
+    <div class="card reveal">
       <h3>Install and run</h3>
       <p class="small muted" style="margin:6px 0 4px">Runs offline. The first run downloads the model (263 MB).</p>
       <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>pip install neam</code></pre></div>
@@ -524,6 +530,12 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
     root.dataset.theme=dark?'light':'dark';
     try{localStorage.setItem('neam-theme',root.dataset.theme);}catch(e){}
   });
+})();
+
+// demo video: play while on screen
+(function(){
+  const v=document.getElementById('demo'); if(reduce||!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting) v.play().catch(()=>{}); else v.pause(); }),{threshold:.5}).observe(v);
 })();
 
 // score grid: 87 of 100
