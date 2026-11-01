@@ -336,8 +336,8 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
 
     <!-- 3 -->
     <article class="card decision reveal">
-      <div class="dtop"><div class="dnum">3</div><div class="dtitle"><div class="q">Which piece should it look at?</div><h3>Read each word from its meaningful part</h3></div><div class="gain">+9.7<small>biggest single step</small></div></div>
-      <div class="why"><b>Why it was necessary:</b> the model splits words into pieces, and about a third of words start with a blank marker that looks the same for every word. The standard method asked the model to decide from that blank, like guessing a word from an empty tile.</div>
+      <div class="dtop"><div class="dnum">3</div><div class="dtitle"><div class="q">Which piece should it look at?</div><h3>Read each word from its meaningful part</h3></div><div class="gain">+2.3<small>won 3 of 3 matched tests</small></div></div>
+      <div class="why"><b>Why it was necessary:</b> the model splits words into pieces, and about a third of words start with a blank marker that looks the same for every word. The standard method asked the model to decide from that blank, which has no letters of its own, so it could only lean on clues from the pieces around it.</div>
       <div class="ba">
         <div class="side before"><div class="lbl">✗ Standard method</div>
           <div class="tiles kh"><span class="tile ask mono">▁</span><span class="tile dim">រាជ</span><span class="tile dim">រដ្ឋាភិបាល</span><span class="tile dim">កម្ពុជា</span></div>
@@ -347,6 +347,7 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
           <div class="tiles kh"><span class="tile dim mono">▁</span><span class="tile good">រាជ</span><span class="tile dim">រដ្ឋាភិបាល</span><span class="tile dim">កម្ពុជា</span></div>
           <div class="qbubble" style="color:var(--good)">asked of the first piece with real content</div></div>
       </div>
+      <details><summary>About the numbers</summary><p>In matched tests where only this choice changed, the new method won on all three seeds, by 2.3 points on average. The release that introduced it (v17) rose 9.7 points, the largest step in Neam's history, but that release also changed how the models were trained, so the 9.7 can't all be credited to this fix. <a href="case-studies/subword-alignment/#evidence">Full case study</a></p></details>
     </article>
 
     <!-- 4 -->
