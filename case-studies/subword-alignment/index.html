@@ -47,27 +47,27 @@
 
 <header class="hero"><div class="wrap">
   <h1>Reading each word from its meaningful piece</h1>
-  <p class="lede">About a third of Khmer words were being labelled from a blank piece that looks the same for every word. Moving the label one piece to the right was Neam's biggest single improvement.</p>
+  <p class="lede">About a third of Khmer words were being labelled from a blank piece that looks the same for every word. Moving the label one piece to the right won every matched training run, and the release that introduced it was the largest single step in Neam's history.</p>
   <div class="facts">
     <div class="fact"><b>37%</b><span>of words begin with a blank "▁" piece</span></div>
-    <div class="fact good"><b>+9.7</b><span>F1 points, the largest step of any change (95% range +3.5 to +16.4)</span></div>
-    <div class="fact"><b>3 of 3</b><span>matched training runs won when only this changed</span></div>
+    <div class="fact good"><b>+2.3</b><span>F1 points on average in matched runs where only this changed (3 of 3 seeds won)</span></div>
+    <div class="fact"><b>+9.7</b><span>F1 points at the release step that introduced it, together with a new training recipe</span></div>
   </div>
 </div></header>
 
 <section id="problem"><div class="wrap">
   <div class="eyebrow">The problem</div>
   <h2>The model was asked to judge a blank tile</h2>
-  <div class="plain"><b>In plain words:</b> Neam's language model doesn't read whole words. It cuts each word into smaller pieces first. For Khmer, it often adds an empty "start of word" piece in front. The usual recipe takes each word's answer from its <i>first</i> piece, so for a third of words the model had to decide "is this a name?" while looking at that empty piece, which is identical for every word.</div>
+  <div class="plain"><b>In plain words:</b> Neam's language model doesn't read whole words. It cuts each word into smaller pieces first. For Khmer, it often adds an empty "start of word" piece in front. The usual recipe takes each word's answer from its <i>first</i> piece, so for a third of words the model had to decide "is this a name?" at that empty piece. It is the same piece for every word, so it can only borrow clues from its neighbours, not from the word itself.</div>
   <p>Neam labels whole words: "this word starts a person's name", "this word continues an organization", and so on. But Khmer ALBERT, the model Neam is built on, works on <b>subwords</b>: a SentencePiece tokenizer splits each word into one or more pieces. A piece that begins a word carries a "▁" marker.</p>
   <p>Often the marker is attached to the first piece, as in <span class="kh">▁កម្ពុជា</span>. But when Khmer words are passed in already split, the tokenizer frequently emits the marker as <b>a piece of its own</b>, followed by the real content: <span class="kh">▁</span> + <span class="kh">រាជ</span>. On Neam's validation set this happens to <b>37.4% of words</b> and <b>33.6% of the words that start a name</b>.</p>
-  <p>The standard recipe for word labelling with BERT-style models puts each word's label on its first piece and ignores the rest. With a bare "▁" in front, that first piece has no information about which word it belongs to.</p>
+  <p>The standard recipe for word labelling with BERT-style models puts each word's label on its first piece and ignores the rest. With a bare "▁" in front, that first piece is the same token for every word. Its representation inside the model isn't empty, because the transformer mixes in context from the surrounding pieces. But it has no letters of its own, so the label has to rest on borrowed context instead of the word itself.</p>
 </div></section>
 
 <section id="try"><div class="wrap">
   <div class="eyebrow">Try it</div>
   <h2>See which piece each method reads</h2>
-  <p class="sub">These are real outputs of Neam's tokenizer, and the tags are Neam's own predictions. Switch methods to see where each one takes the label from.</p>
+  <p class="sub">The pieces are real outputs of Neam's tokenizer. Switch methods to see which piece each one takes the label from.</p>
   <div class="card">
     <div class="controls">
       <label for="ex">Example</label>
@@ -84,6 +84,7 @@
       <span><i style="border-color:var(--good)"></i>piece the label is read from</span>
       <span><i style="border-color:var(--bad)"></i>label read from a blank "▁"</span>
     </div>
+    <p class="small muted" style="margin:14px 0 0"><b>What the switch changes:</b> only the highlight showing where each method reads the label. The tags under each word are the released model's predictions (trained with the meaningful-piece method) and stay the same in both views. The switch doesn't rerun a first-piece model; the controlled test below compares the two methods.</p>
   </div>
 </div></section>
 
@@ -114,10 +115,11 @@ for position, word_id in enumerate(word_ids):
 <section id="evidence"><div class="wrap">
   <div class="eyebrow">Evidence</div>
   <h2>Does it really help?</h2>
-  <div class="plain"><b>In plain words:</b> we trained pairs of models that were identical except for this one choice. The new method won every time once the models were trained properly. It also gave the biggest jump in Neam's history, and that jump is too large to be luck.</div>
+  <div class="plain"><b>In plain words:</b> we trained pairs of models that were identical except for this one choice. The new method won every time once the models were trained properly. That controlled test is the real evidence. The release that introduced it also jumped a lot, but other things changed in that release too, so the bigger number can't all be credited to this fix.</div>
   <div class="grid2">
     <div class="card">
       <h3>Controlled test: only the label position changes</h3>
+      <p class="small" style="margin:0 0 6px"><b>This is the evidence that the fix itself helps.</b></p>
       <p class="small muted">Validation F1 (%), five epochs, same data and settings, three seeds.</p>
       <div class="tblwrap"><table class="tbl">
         <thead><tr><th>Seed</th><th>First piece</th><th>Meaningful piece</th></tr></thead>
@@ -131,8 +133,8 @@ for position, word_id in enumerate(word_ids):
       <p class="small muted" style="margin:10px 0 0">The new method found 3 to 5 more exact entities on every seed, and organizations improved every time.</p>
     </div>
     <div class="card">
-      <h3>In the release history</h3>
-      <p class="small muted">v12 → v17, where this was the change. Exact-span F1 (%).</p>
+      <h3>In the release history (not a controlled test)</h3>
+      <p class="small muted">v12 → v17, the release that introduced the fix. Exact-span F1 (%).</p>
       <div class="barcmp">
         <div class="bc"><span>v12 held-out</span><div class="bar"><i style="width:62.09%"></i></div><b>62.1</b></div>
         <div class="bc us"><span>v17 held-out</span><div class="bar"><i style="width:74.30%"></i></div><b>74.3</b></div>
@@ -141,7 +143,7 @@ for position, word_id in enumerate(word_ids):
         <div class="bc"><span>v12 organizations</span><div class="bar"><i style="width:40.3%"></i></div><b>40.3</b></div>
         <div class="bc us"><span>v17 organizations</span><div class="bar"><i style="width:55.6%"></i></div><b>55.6</b></div>
       </div>
-      <p class="small muted" style="margin:12px 0 0">Pooled over both test sets: <b>+9.7</b> points. Resampling whole articles 10,000 times puts the gain between <b>+3.5 and +16.4</b>, so it is clearly above zero.</p>
+      <p class="small muted" style="margin:12px 0 0">Pooled over both test sets the step was worth <b>+9.7</b> points (95% range +3.5 to +16.4), so the release clearly improved. But v17 also changed how models were trained (one five-epoch run from the base model, at a higher learning rate), and it was the best of three seeds. With the old first-piece method, the new recipe scored about the same as v12 (68.88 vs 69.03 validation), which suggests the alignment did much of the work. Still, read +9.7 as the gain of the whole release, not of alignment alone.</p>
     </div>
   </div>
   <div class="card" style="margin-top:16px">
@@ -235,7 +237,7 @@ function render(){
   }).join('');
   const n = e.words.length, affected = e.words.filter(w=>w.first!==w.content).length;
   document.getElementById('summary').innerHTML = method==='first'
-    ? `<span class="bad">${blank} of ${n} words</span> are labelled from a blank "▁" piece, including ${blankStarts} of the ${starts} words that start a name.`
+    ? `With this method, <span class="bad">${blank} of ${n} words</span> would be labelled from a blank "▁" piece, including ${blankStarts} of the ${starts===1?'one word that starts':starts+' words that start'} a name.`
     : `<span class="good">Every word is read from a piece with Khmer letters.</span> ${affected} of ${n} words moved one piece to the right.`;
 }
 render();
