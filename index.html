@@ -235,7 +235,7 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
 <nav class="top"><div class="wrap">
   <a class="brand" href="#top">Neam <span class="kh">នាម</span></a>
   <div class="links">
-    <a href="#problem">Problem</a><a href="#score">Score</a><a href="#decisions">Decisions</a><a href="#journey">Journey</a><a href="#results">Results</a><a href="#use">Use it</a>
+    <a href="#problem">Problem</a><a href="#score">Score</a><a href="#decisions">Decisions</a><a href="#journey">Journey</a><a href="#results">Results</a><a href="#use">Use it</a><a href="case-studies/">Case studies</a>
   </div>
   <button class="iconbtn" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
 </div></nav>
@@ -614,7 +614,7 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',
   try{history.replaceState(null,'','#'+id);}catch(e){}
 }));
 (function(){
-  const links=[...document.querySelectorAll('nav.top .links a')];
+  const links=[...document.querySelectorAll('nav.top .links a[href^="#"]')];
   const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting) links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id));}),{rootMargin:'-45% 0px -50% 0px'});
   links.forEach(l=>{const t=document.querySelector(l.getAttribute('href')); if(t) obs.observe(t);});
 })();

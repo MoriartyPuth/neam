@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neam: Content-Subword Alignment</title>
+<meta name="description" content="Case study: why a third of Khmer words were being labelled from a blank piece, and how reading each word from its first meaningful piece became Neam's biggest single improvement.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Khmer:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../cs.css">
+<style>
+.words{display:flex;flex-wrap:wrap;gap:10px}
+.wcol{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:8px 10px 10px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0}
+.wcol .wtext{font-size:13px;color:var(--muted)}
+.pieces{display:flex;gap:4px}
+.pc{border:2px solid var(--line);border-radius:8px;padding:2px 8px;font-size:19px;background:var(--surface-2);display:inline-flex;align-items:center;gap:2px;transition:border-color .25s,box-shadow .25s,opacity .25s}
+.pc .mk{font:600 13px "JetBrains Mono",monospace;color:var(--muted)}
+.pc.blank{min-width:34px;justify-content:center}
+.pc.dim{opacity:.4}
+.pc.read{border-color:var(--good);box-shadow:0 0 0 3px color-mix(in srgb,var(--good) 22%,transparent);opacity:1}
+.pc.read.blank{border-color:var(--bad);box-shadow:0 0 0 3px color-mix(in srgb,var(--bad) 20%,transparent)}
+.tagc{font:700 12px "JetBrains Mono",monospace;padding:2px 7px;border-radius:6px;background:var(--surface-2);color:var(--muted)}
+.tagc.ent{background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)}
+.summary{margin-top:16px;font-size:15px;font-weight:600;min-height:1.6em}
+.summary .bad{color:var(--bad)} .summary .good{color:var(--good)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:12px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;border:2px solid;vertical-align:-2px;margin-right:6px}
+.gloss{font-size:14px;color:var(--muted);margin:-6px 0 14px}
+.barcmp{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.bc{display:grid;grid-template-columns:150px 1fr 54px;gap:10px;align-items:center;font-size:14px}
+.bc .bar{height:14px;border-radius:7px;background:var(--surface-2);overflow:hidden}
+.bc .bar i{display:block;height:100%;border-radius:7px;background:var(--muted)}
+.bc.us .bar i{background:var(--good)}
+.bc b{font-family:"JetBrains Mono",monospace;font-size:13px;text-align:right}
+@media (max-width:520px){.bc{grid-template-columns:110px 1fr 46px}}
+</style>
+</head>
+<body>
+<nav class="top"><div class="wrap">
+  <a class="brand" href="../../">Neam <span class="kh">នាម</span></a>
+  <div class="links">
+    <a href="../">Case studies</a><a href="#problem">Problem</a><a href="#try">Try it</a><a href="#fix">Fix</a><a href="#evidence">Evidence</a><a href="#prior">Prior work</a><a href="#credits">Credits</a>
+  </div>
+  <button class="iconbtn" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <h1>Reading each word from its meaningful piece</h1>
+  <p class="lede">About a third of Khmer words were being labelled from a blank piece that looks the same for every word. Moving the label one piece to the right was Neam's biggest single improvement.</p>
+  <div class="facts">
+    <div class="fact"><b>37%</b><span>of words begin with a blank "▁" piece</span></div>
+    <div class="fact good"><b>+9.7</b><span>F1 points, the largest step of any change (95% range +3.5 to +16.4)</span></div>
+    <div class="fact"><b>3 of 3</b><span>matched training runs won when only this changed</span></div>
+  </div>
+</div></header>
+
+<section id="problem"><div class="wrap">
+  <div class="eyebrow">The problem</div>
+  <h2>The model was asked to judge a blank tile</h2>
+  <div class="plain"><b>In plain words:</b> Neam's language model doesn't read whole words. It cuts each word into smaller pieces first. For Khmer, it often adds an empty "start of word" piece in front. The usual recipe takes each word's answer from its <i>first</i> piece, so for a third of words the model had to decide "is this a name?" while looking at that empty piece, which is identical for every word.</div>
+  <p>Neam labels whole words: "this word starts a person's name", "this word continues an organization", and so on. But Khmer ALBERT, the model Neam is built on, works on <b>subwords</b>: a SentencePiece tokenizer splits each word into one or more pieces. A piece that begins a word carries a "▁" marker.</p>
+  <p>Often the marker is attached to the first piece, as in <span class="kh">▁កម្ពុជា</span>. But when Khmer words are passed in already split, the tokenizer frequently emits the marker as <b>a piece of its own</b>, followed by the real content: <span class="kh">▁</span> + <span class="kh">រាជ</span>. On Neam's validation set this happens to <b>37.4% of words</b> and <b>33.6% of the words that start a name</b>.</p>
+  <p>The standard recipe for word labelling with BERT-style models puts each word's label on its first piece and ignores the rest. With a bare "▁" in front, that first piece has no information about which word it belongs to.</p>
+</div></section>
+
+<section id="try"><div class="wrap">
+  <div class="eyebrow">Try it</div>
+  <h2>See which piece each method reads</h2>
+  <p class="sub">These are real outputs of Neam's tokenizer, and the tags are Neam's own predictions. Switch methods to see where each one takes the label from.</p>
+  <div class="card">
+    <div class="controls">
+      <label for="ex">Example</label>
+      <select id="ex"></select>
+      <div class="seg" role="group" aria-label="Labelling method">
+        <button type="button" data-m="first">Standard: first piece</button>
+        <button type="button" data-m="content" class="on">Neam: first meaningful piece</button>
+      </div>
+    </div>
+    <div class="gloss" id="gloss"></div>
+    <div class="words kh" id="words"></div>
+    <div class="summary" id="summary" aria-live="polite"></div>
+    <div class="legend">
+      <span><i style="border-color:var(--good)"></i>piece the label is read from</span>
+      <span><i style="border-color:var(--bad)"></i>label read from a blank "▁"</span>
+    </div>
+  </div>
+</div></section>
+
+<section id="fix"><div class="wrap">
+  <div class="eyebrow">The fix</div>
+  <h2>Skip the blank, read the first real piece</h2>
+  <div class="plain"><b>In plain words:</b> if a word starts with an empty piece, Neam takes the answer from the next piece instead, the first one that actually contains Khmer letters. Nothing else about the model changes.</div>
+  <p>For word <i>j</i> split into pieces <i>t</i><sub>j,1</sub> … <i>t</i><sub>j,n</sub>, the label goes on the first piece that isn't a bare marker. All other pieces are ignored by the training loss, exactly as before. The same choice is saved in the model's configuration, so training and prediction always read the same piece.</p>
+  <div class="formula">π(j) = min { k : t<sub>j,k</sub> ≠ "▁" }   instead of   π(j) = 1</div>
+  <details class="tech">
+    <summary>Technical detail: the code in Neam</summary>
+    <div class="in">
+      <p>From <code>neam/preprocess.py</code>. <code>word_ids</code> maps each piece to its word; <code>tokens</code> are the piece strings.</p>
+<pre><code>positions, content = {}, set()
+for position, word_id in enumerate(word_ids):
+    if word_id is None or word_id in content:
+        continue
+    if word_id not in positions:
+        positions[word_id] = position          # first piece, as a fallback
+    if tokens[position].strip('▁'):        # has real content
+        positions[word_id] = position          # read the label here
+        content.add(word_id)</code></pre>
+      <p class="small muted" style="margin-top:10px">A word made only of markers keeps its first piece. Checkpoints trained before this change have no recorded position and keep reading the first piece, so older models still load correctly.</p>
+    </div>
+  </details>
+</div></section>
+
+<section id="evidence"><div class="wrap">
+  <div class="eyebrow">Evidence</div>
+  <h2>Does it really help?</h2>
+  <div class="plain"><b>In plain words:</b> we trained pairs of models that were identical except for this one choice. The new method won every time once the models were trained properly. It also gave the biggest jump in Neam's history, and that jump is too large to be luck.</div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Controlled test: only the label position changes</h3>
+      <p class="small muted">Validation F1 (%), five epochs, same data and settings, three seeds.</p>
+      <div class="tblwrap"><table class="tbl">
+        <thead><tr><th>Seed</th><th>First piece</th><th>Meaningful piece</th></tr></thead>
+        <tbody>
+          <tr><td>42</td><td>70.32</td><td class="win">71.62</td></tr>
+          <tr><td>43</td><td>67.26</td><td class="win">69.91</td></tr>
+          <tr><td>44</td><td>69.06</td><td class="win">72.07</td></tr>
+          <tr><td><b>Mean</b></td><td>68.88</td><td class="win">71.20 (+2.3)</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small muted" style="margin:10px 0 0">The new method found 3 to 5 more exact entities on every seed, and organizations improved every time.</p>
+    </div>
+    <div class="card">
+      <h3>In the release history</h3>
+      <p class="small muted">v12 → v17, where this was the change. Exact-span F1 (%).</p>
+      <div class="barcmp">
+        <div class="bc"><span>v12 held-out</span><div class="bar"><i style="width:62.09%"></i></div><b>62.1</b></div>
+        <div class="bc us"><span>v17 held-out</span><div class="bar"><i style="width:74.30%"></i></div><b>74.3</b></div>
+        <div class="bc"><span>v12 people</span><div class="bar"><i style="width:69.4%"></i></div><b>69.4</b></div>
+        <div class="bc us"><span>v17 people</span><div class="bar"><i style="width:93.9%"></i></div><b>93.9</b></div>
+        <div class="bc"><span>v12 organizations</span><div class="bar"><i style="width:40.3%"></i></div><b>40.3</b></div>
+        <div class="bc us"><span>v17 organizations</span><div class="bar"><i style="width:55.6%"></i></div><b>55.6</b></div>
+      </div>
+      <p class="small muted" style="margin:12px 0 0">Pooled over both test sets: <b>+9.7</b> points. Resampling whole articles 10,000 times puts the gain between <b>+3.5 and +16.4</b>, so it is clearly above zero.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Where it does not help</h3>
+    <p style="margin:0">With only two training epochs, both methods underfit and the advantage disappears (56.34 vs 54.83 mean). The model needs enough training for its labelling layer to use the extra information. The controlled runs used the validation labels of the time (107 entities) and the evaluation sets are small, so the exact size of the gain is uncertain even though its direction is not.</p>
+  </div>
+</div></section>
+
+<section id="prior"><div class="wrap">
+  <div class="eyebrow">Prior work</div>
+  <h2>What was known, and what Neam adds</h2>
+  <div class="plain"><b>In plain words:</b> other developers had already run into the blank piece, and researchers have compared ways of reading a word from its pieces. We didn't find anyone who measured this exact problem for Khmer and showed how much fixing it is worth.</div>
+  <div class="stack">
+    <div class="card">
+      <h3>Already known</h3>
+      <ul style="margin:0;padding-left:20px">
+        <li>The stand-alone "▁" piece has been reported by developers using the multilingual XLM-R model, for example in Hugging Face Transformers issues <a href="https://github.com/huggingface/transformers/issues/8958">#8958</a> and <a href="https://github.com/huggingface/transformers/issues/9637">#9637</a>. In practice, people often work around it.</li>
+        <li>Ács, Kádár and Kornai, <a href="https://aclanthology.org/2021.eacl-main.194">"Subword Pooling Makes a Difference"</a> (EACL 2021), compared first-piece, last-piece and learned ways of reading a word, across nine languages.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What Neam adds</h3>
+      <ul style="margin:0;padding-left:20px">
+        <li>Measures how often the blank piece decides a Khmer word's label: 37.4% of words and 33.6% of name starts.</li>
+        <li>A controlled test that isolates the fix, and its effect on a released system: the largest single gain, with a confidence interval above zero.</li>
+        <li>A one-line rule that is saved with the model, so training and prediction can't drift apart.</li>
+      </ul>
+      <p class="small muted" style="margin:12px 0 0">We searched for earlier work that measures this fix and found none, but we can't rule out that it exists. The fair description is: a known tokenizer pitfall, measured and fixed for Khmer NER in Neam.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="credits"><div class="wrap">
+  <div class="eyebrow">Credits</div>
+  <h2>Built on the work of</h2>
+  <div class="credits">
+    <div class="credit"><span class="who">Content-subword alignment</span><span class="badge ours">Neam</span><span class="what">The rule, the measurements and the controlled test on this page.</span></div>
+    <div class="credit"><span class="who">Khmer ALBERT small · Seanghay Yath</span><span class="badge kh-dev">Khmer NLP</span><span class="what">A Cambodia-based developer. The pretrained Khmer model every Neam member is fine-tuned from (<a href="https://huggingface.co/seanghay/albert-khmer-small">seanghay/albert-khmer-small</a>, Apache 2.0). Its tokenizer produces the pieces shown above.</span></div>
+    <div class="credit"><span class="who">SentencePiece · Kudo &amp; Richardson (Google)</span><span class="badge lib">Method</span><span class="what">The subword tokenizer, including the "▁" word marker.</span></div>
+    <div class="credit"><span class="who">ALBERT · Lan et al. (Google)</span><span class="badge lib">Method</span><span class="what">The model architecture, which shares weights across layers to stay small (9.3M parameters per member).</span></div>
+    <div class="credit"><span class="who">First-subword labelling · Devlin et al. (BERT)</span><span class="badge lib">Method</span><span class="what">The standard recipe this case study improves on.</span></div>
+    <div class="credit"><span class="who">Hugging Face Transformers</span><span class="badge lib">Library</span><span class="what">The fast tokenizer's word mapping that makes the alignment possible.</span></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="pager">
+    <a href="../"><div class="card"><small>← All case studies</small><b>Case studies</b></div></a>
+    <a href="../reading-an-article/"><div class="card" style="text-align:right"><small>Next →</small><b>How Neam reads a Khmer article</b></div></a>
+  </div>
+</div></section>
+<div class="end"><div class="wrap">Numbers are from the Neam preprint (v26 release). Tokenizer pieces and tags on this page were generated with the released model.</div></div>
+
+<script>
+(function(){
+  const root=document.documentElement, btn=document.getElementById('theme');
+  try{const t=localStorage.getItem('neam-theme'); if(t) root.dataset.theme=t;}catch(e){}
+  btn.addEventListener('click',()=>{
+    const dark=root.dataset.theme? root.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('neam-theme',root.dataset.theme);}catch(e){}
+  });
+})();
+
+const EXAMPLES = [{"gloss":"Royal Government of Cambodia","text":"រាជរដ្ឋាភិបាលកម្ពុជា","words":[{"w":"រាជ","pieces":["▁","រាជ"],"first":0,"content":1,"tag":"B-ORG"},{"w":"រដ្ឋាភិបាល","pieces":["▁រដ្ឋាភិបាល"],"first":0,"content":0,"tag":"I-ORG"},{"w":"កម្ពុជា","pieces":["▁កម្ពុជា"],"first":0,"content":0,"tag":"I-ORG"}]},{"gloss":"Mr. Hun Manet met with the Ministry of Health in Phnom Penh.","text":"លោក ហ៊ុន ម៉ាណែត បានជួបជាមួយក្រសួងសុខាភិបាលនៅរាជធានីភ្នំពេញ។","words":[{"w":"លោក","pieces":["▁លោក"],"first":0,"content":0,"tag":"O"},{"w":"ហ៊ុន","pieces":["▁ហ៊ុន"],"first":0,"content":0,"tag":"B-PER"},{"w":"ម៉ាណែត","pieces":["▁ម៉ាណែត"],"first":0,"content":0,"tag":"I-PER"},{"w":"បាន","pieces":["▁បាន"],"first":0,"content":0,"tag":"O"},{"w":"ជួប","pieces":["▁ជួប"],"first":0,"content":0,"tag":"O"},{"w":"ជាមួយ","pieces":["▁ជាមួយ"],"first":0,"content":0,"tag":"O"},{"w":"ក្រសួង","pieces":["▁ក្រសួង"],"first":0,"content":0,"tag":"B-ORG"},{"w":"សុខាភិបាល","pieces":["▁","សុខាភិបាល"],"first":0,"content":1,"tag":"I-ORG"},{"w":"នៅ","pieces":["▁នៅ"],"first":0,"content":0,"tag":"O"},{"w":"រាជធានី","pieces":["▁","រាជធានី"],"first":0,"content":1,"tag":"B-LOC"},{"w":"ភ្នំពេញ","pieces":["▁ភ្នំពេញ"],"first":0,"content":0,"tag":"I-LOC"},{"w":"។","pieces":["▁។"],"first":0,"content":0,"tag":"O"}]},{"gloss":"The Royal University of Phnom Penh and the Ministry of Education, Youth and Sport held a forum in Siem Reap province, joined by Mr. Sor Pheakdey.","text":"សាកលវិទ្យាល័យភូមិន្ទភ្នំពេញ និងក្រសួងអប់រំ យុវជន និងកីឡា បានរៀបចំវេទិកាមួយនៅខេត្តសៀមរាប ដោយមានការចូលរួមពីលោក ស ភក្តី។","words":[{"w":"សាកលវិទ្យាល័យ","pieces":["▁","សាកលវិទ្យាល័យ"],"first":0,"content":1,"tag":"B-ORG"},{"w":"ភូមិន្ទ","pieces":["▁","ភូមិន្ទ"],"first":0,"content":1,"tag":"I-ORG"},{"w":"ភ្នំពេញ","pieces":["▁ភ្នំពេញ"],"first":0,"content":0,"tag":"I-ORG"},{"w":"និង","pieces":["▁និង"],"first":0,"content":0,"tag":"O"},{"w":"ក្រសួង","pieces":["▁ក្រសួង"],"first":0,"content":0,"tag":"B-ORG"},{"w":"អប់រំ","pieces":["▁","អប់រំ"],"first":0,"content":1,"tag":"I-ORG"},{"w":"យុវជន","pieces":["▁យុវជន"],"first":0,"content":0,"tag":"I-ORG"},{"w":"និង","pieces":["▁និង"],"first":0,"content":0,"tag":"I-ORG"},{"w":"កីឡា","pieces":["▁","កីឡា"],"first":0,"content":1,"tag":"I-ORG"},{"w":"បាន","pieces":["▁បាន"],"first":0,"content":0,"tag":"O"},{"w":"រៀបចំ","pieces":["▁រៀបចំ"],"first":0,"content":0,"tag":"O"},{"w":"វេទិកា","pieces":["▁","វេទិកា"],"first":0,"content":1,"tag":"O"},{"w":"មួយ","pieces":["▁","មួយ"],"first":0,"content":1,"tag":"O"},{"w":"នៅ","pieces":["▁នៅ"],"first":0,"content":0,"tag":"O"},{"w":"ខេត្ត","pieces":["▁ខេត្ត"],"first":0,"content":0,"tag":"B-LOC"},{"w":"សៀមរាប","pieces":["▁","សៀមរាប"],"first":0,"content":1,"tag":"I-LOC"},{"w":"ដោយ","pieces":["▁ដោយ"],"first":0,"content":0,"tag":"O"},{"w":"មាន","pieces":["▁មាន"],"first":0,"content":0,"tag":"O"},{"w":"ការចូលរួម","pieces":["▁","ការចូលរួម"],"first":0,"content":1,"tag":"O"},{"w":"ពី","pieces":["▁ពី"],"first":0,"content":0,"tag":"O"},{"w":"លោក","pieces":["▁លោក"],"first":0,"content":0,"tag":"O"},{"w":"ស","pieces":["▁ស"],"first":0,"content":0,"tag":"B-PER"},{"w":"ភក្តី","pieces":["▁ភក្តី"],"first":0,"content":0,"tag":"I-PER"},{"w":"។","pieces":["▁។"],"first":0,"content":0,"tag":"O"}]}];
+let ex = 0, method = 'content';
+const sel = document.getElementById('ex');
+sel.innerHTML = EXAMPLES.map((e,i)=>`<option value="${i}">${e.gloss.length>60?e.gloss.slice(0,58)+'…':e.gloss}</option>`).join('');
+sel.addEventListener('change',()=>{ex=+sel.value;render();});
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
+  method=b.dataset.m; document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x===b)); render();
+}));
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function piece(p, cls){
+  if(p==='▁') return `<span class="pc blank ${cls}"><span class="mk">▁</span></span>`;
+  if(p.startsWith('▁')) return `<span class="pc ${cls}"><span class="mk">▁</span>${esc(p.slice(1))}</span>`;
+  return `<span class="pc ${cls}">${esc(p)}</span>`;
+}
+function render(){
+  const e = EXAMPLES[ex];
+  document.getElementById('gloss').textContent = '"' + e.gloss + '"';
+  let blank = 0, starts = 0, blankStarts = 0;
+  document.getElementById('words').innerHTML = e.words.map(w=>{
+    const k = method==='first' ? w.first : w.content;
+    const readBlank = w.pieces[k]==='▁';
+    if(readBlank) blank++;
+    if(w.tag.startsWith('B-')){starts++; if(w.pieces[w.first]==='▁') blankStarts++;}
+    const type = w.tag==='O' ? '' : w.tag.slice(2);
+    return `<div class="wcol"><div class="pieces">${w.pieces.map((p,i)=>piece(p, i===k?'read':'dim')).join('')}</div>`+
+      `<span class="tagc ${type?'ent t-'+type:''}">${w.tag}</span></div>`;
+  }).join('');
+  const n = e.words.length, affected = e.words.filter(w=>w.first!==w.content).length;
+  document.getElementById('summary').innerHTML = method==='first'
+    ? `<span class="bad">${blank} of ${n} words</span> are labelled from a blank "▁" piece, including ${blankStarts} of the ${starts} words that start a name.`
+    : `<span class="good">Every word is read from a piece with Khmer letters.</span> ${affected} of ${n} words moved one piece to the right.`;
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neam: Reading a Khmer Article</title>
+<meta name="description" content="Case study: how Neam turns a real Khmer news article into words without losing a character, reads long articles in overlapping windows, and maps every answer back to the exact spot in the text.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Khmer:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../cs.css">
+<style>
+/* hidden characters */
+.raw{font-size:24px;line-height:2.2;word-break:break-all;background:var(--surface-2);border-radius:12px;padding:10px 14px}
+.raw .ch{border-radius:4px;transition:background .2s}
+.raw .ch.hl{background:color-mix(in srgb,var(--loc) 30%,transparent)}
+.raw .zw{display:inline-block;width:10px;height:24px;vertical-align:middle;border:2px dashed var(--bad);border-radius:3px;margin:0 1px}
+.raw .zw.hl{background:color-mix(in srgb,var(--loc) 30%,transparent)}
+.wchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.wchip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:2px 9px;font-size:18px;cursor:pointer;font-family:inherit}
+.wchip.on,.wchip:hover{border-color:var(--loc);box-shadow:0 0 0 3px color-mix(in srgb,var(--loc) 20%,transparent)}
+.offset{margin-top:12px;font-size:15px;min-height:1.6em}
+.offset code{background:var(--surface-2);padding:1px 6px;border-radius:6px}
+.flow{display:grid;grid-template-columns:1fr 32px 1fr 32px 1fr;align-items:stretch;gap:0;margin-top:6px}
+.flow>.card{padding:16px}
+.flow .ar{display:grid;place-items:center;color:var(--muted);font-size:22px}
+.flow h3{font-size:15px}
+.flow p{font-size:14px;color:var(--muted);margin:0}
+/* lessons */
+.lesson .num{font:800 30px Inter,sans-serif;letter-spacing:-.02em;color:var(--good)}
+.lesson .num s{color:var(--muted);text-decoration-thickness:2px;font-weight:600;font-size:22px;margin-right:6px}
+/* windows */
+.wv{position:relative;margin-top:8px}
+.wrows{display:flex;flex-direction:column;gap:5px}
+.wrow{position:relative;height:18px}
+.wbar{position:absolute;top:0;height:18px;border-radius:5px;border:2px solid var(--navy);background:color-mix(in srgb,var(--navy) 10%,transparent);transition:all .3s}
+.wbar.has{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,transparent)}
+.wbar.best{border-color:var(--good);background:color-mix(in srgb,var(--good) 40%,transparent)}
+.wbar span{position:absolute;left:6px;top:-1px;font:700 11px Inter,sans-serif;color:var(--muted)}
+.strip{position:relative;height:34px;margin-top:10px;border-radius:6px;overflow:hidden;background:var(--surface-2);cursor:pointer;touch-action:none}
+.strip i{position:absolute;top:0;bottom:0;border-right:1px solid var(--surface)}
+.strip i.e{top:auto;height:8px;bottom:0}
+.cursor{position:absolute;top:-6px;bottom:-6px;width:3px;margin-left:-1px;background:var(--accent);border-radius:2px;pointer-events:none}
+.ctx{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:14px}
+.ctxc{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;background:var(--surface)}
+.ctxc.best{border-color:var(--good);box-shadow:0 0 0 3px color-mix(in srgb,var(--good) 18%,transparent)}
+.ctxc b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.ctxc .m{font:600 13px "JetBrains Mono",monospace}
+.wordnow{font-size:15px;margin-top:14px}
+.wordnow .kh{font-size:20px}
+.weak{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.weak .fact b{font-size:24px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+@media (max-width:760px){.flow{grid-template-columns:1fr}.flow .ar{transform:rotate(90deg);height:28px}.weak{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="top"><div class="wrap">
+  <a class="brand" href="../../">Neam <span class="kh">នាម</span></a>
+  <div class="links">
+    <a href="../">Case studies</a><a href="#hidden">Hidden characters</a><a href="#windows">Windows</a><a href="#back">Back to the text</a><a href="#credits">Credits</a>
+  </div>
+  <button class="iconbtn" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <h1>How Neam reads a Khmer article</h1>
+  <p class="lede">Real news text is full of invisible characters, and articles are longer than the model can read at once. Neam has to cut the text into words, read it in pieces and still point every answer at the exact characters in the original. This page follows a real article through those steps.</p>
+  <div class="flow" style="margin-top:28px">
+    <div class="card"><h3>1. Hidden characters</h3><p>Remove them for the model only, and keep every word's original position.</p></div>
+    <div class="ar">→</div>
+    <div class="card"><h3>2. Overlapping windows</h3><p>Read long articles in overlapping windows, and take each word from the window where it has the most context.</p></div>
+    <div class="ar">→</div>
+    <div class="card"><h3>3. Back to the text</h3><p>Turn word labels into character spans that match the original exactly.</p></div>
+  </div>
+</div></header>
+
+<section id="hidden"><div class="wrap">
+  <div class="eyebrow">Step 1</div>
+  <h2>Invisible characters, visible problems</h2>
+  <div class="plain"><b>In plain words:</b> Khmer has no spaces between words, so many websites insert invisible "zero-width spaces" to help browsers wrap lines. They don't follow any rule, and the model never saw them in training. Neam removes them from what the model reads, but remembers where every word sits in the original text, so its answers still point to the right place.</div>
+  <p>The first line of a real Kampuchea Thmey sports article contains <b id="zwcount"></b> zero-width spaces in its first <b id="zwlen"></b> characters, shown below as dashed boxes. Click a word to see where it maps back to in the original.</p>
+  <div class="card">
+    <div class="raw kh" id="raw" aria-label="Original text with hidden characters marked"></div>
+    <div class="wchips kh" id="wchips"></div>
+    <div class="offset" id="offset" aria-live="polite"></div>
+  </div>
+  <details class="tech">
+    <summary>Technical detail: why "lossless"</summary>
+    <div class="in">
+      <p>Neam records the position of every visible character, removes U+200B, U+200C and U+200D, and passes the clean text to the word segmenter. Each word the segmenter returns is located in the clean text and mapped back to its original start and end. Word 8 in this example, <span class="kh">ពិតជា</span>, has a hidden character inside it; its span (30–36) still covers exactly the right characters in the original.</p>
+      <p style="margin:0">The mapping also checks the segmenter: if it ever changed, dropped or invented a non-space character, Neam raises an error instead of returning shifted positions. Coeng and other combining marks are never removed.</p>
+<pre><code>positions = [i for i, c in enumerate(text) if c not in HIDDEN]
+clean = normalize(text)                      # drops only U+200B/C/D
+for piece in segmenter(clean):
+    start = clean.find(piece, cursor)
+    if start &lt; 0 or clean[cursor:start].strip():
+        raise ValueError('Segmentation changed or skipped non-whitespace text.')
+    end = start + len(piece)
+    words.append(Word(piece, positions[start], positions[end - 1] + 1))</code></pre>
+    </div>
+  </details>
+</div></section>
+
+<section id="windows"><div class="wrap">
+  <div class="eyebrow">Step 2</div>
+  <h2>Reading a long article in overlapping windows</h2>
+  <div class="plain"><b>In plain words:</b> the model can only read 128 pieces at a time, and a news article is usually longer. If you cut it into back-to-back chunks, a word near a cut sees text on one side only, like reading a sentence that has been torn in half. Neam reads overlapping windows instead, and takes each word's answer from the window where that word is most central.</div>
+  <p>Below is the unseen article from the demo video (<a href="https://www.kampucheathmey.com/traffic/1199981">Kampuchea Thmey, traffic</a>): <b id="nwords"></b> words, <b id="npieces"></b> pieces. Each bar is a window. Drag along the article strip, or use the slider, to pick a word. For every window that contains the word, the cards show how much context it has on each side; the window with the larger <i>weaker side</i> wins.</p>
+  <div class="card">
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Window mode">
+        <button type="button" data-w="chunks">Back-to-back chunks</button>
+        <button type="button" data-w="overlap" class="on">Neam: overlapping windows</button>
+      </div>
+    </div>
+    <div class="wv">
+      <div class="wrows" id="wrows"></div>
+      <div class="strip" id="strip" aria-hidden="true"><div class="cursor" id="cursor"></div></div>
+    </div>
+    <input type="range" id="slider" min="0" value="80" aria-label="Choose a word in the article" style="margin-top:12px">
+    <div class="wordnow" id="wordnow" aria-live="polite"></div>
+    <div class="ctx" id="ctx"></div>
+    <div class="weak">
+      <div class="fact"><b id="weakc"></b><span>words with fewer than 16 pieces of context on their weaker side, back-to-back chunks</span></div>
+      <div class="fact good"><b id="weako"></b><span>with Neam's overlapping windows</span></div>
+    </div>
+    <p class="small muted" style="margin:12px 0 0">Coloured ticks under the strip are the names Neam found: <span style="color:var(--per)">people</span>, <span style="color:var(--org)">organizations</span>, <span style="color:var(--loc)">places</span>. The article edges count as full context, because there is nothing more to read.</p>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h3>What it changed</h3>
+      <p style="margin:0">Honestly, not much overall: validation F1 moved from 76.28 to 76.50. But organization F1 rose by <b>4.6 to 6.4 points</b> in all four comparisons, and it recovered a country name that had been missed at the end of a long article. Organization names are long, so they are the most likely to be cut in half. We kept the windows because they remove a systematic blind spot and have no settings to tune.</p>
+    </div>
+    <div class="card">
+      <h3>Where the rule comes from</h3>
+      <p style="margin:0">The "most context on the weaker side" rule is the one Google's original BERT code uses for question answering over long documents (<code>_check_is_max_context</code> in BERT's SQuAD script). Neam applies it to named entity recognition, builds windows from whole words, advances them by about half a window, and right-aligns the last one so it stays full.</p>
+    </div>
+  </div>
+  <details class="tech">
+    <summary>Technical detail: the window rule</summary>
+    <div class="in">
+      <p>For word <i>j</i> in window W = [a, b), let L<sub>W</sub>(j) and R<sub>W</sub>(j) be the pieces to its left and right inside W, counted as infinite at a document edge. Each word is read from exactly one window:</p>
+      <div class="formula">W*(j) = argmax over W ∋ j of min( L<sub>W</sub>(j), R<sub>W</sub>(j) )</div>
+      <p style="margin:10px 0 0">Windows hold at most 128 pieces including the two special tokens, so 126 for words. In this article that gives the six windows shown above; the last two overlap heavily because the last one is right-aligned.</p>
+    </div>
+  </details>
+</div></section>
+
+<section id="back"><div class="wrap">
+  <div class="eyebrow">Step 3</div>
+  <h2>Back to the exact characters</h2>
+  <div class="plain"><b>In plain words:</b> the model labels words, but people need the exact characters: where a name starts and ends in their text. Two bugs in this last step made correct answers look wrong. Finding them was worth more than many rounds of training.</div>
+  <div class="grid2">
+    <div class="card lesson">
+      <h3>The scorer was dropping punctuation</h3>
+      <div class="num"><s>54.90</s>69.03</div>
+      <p class="small muted">validation F1, same model weights</p>
+      <p style="margin:0">Turning word labels back into spans dropped punctuation inside names, such as the dots in an initialism ("U.S.A." came back as "U.S.A"), and mishandled prefixes. Under exact matching, those correct predictions counted as errors. Fixing it before any retraining raised the baseline by 14 points.</p>
+    </div>
+    <div class="card lesson">
+      <h3>Names that crossed a line break</h3>
+      <div class="num"><s>86.70</s>86.98</div>
+      <p class="small muted">held-out F1, same model (release 0.2.1)</p>
+      <p style="margin:0">Articles are imported line by line, but a name could still be joined across a line break, gluing the end of one paragraph to the start of the next. Since 0.2.1, a name never spans a line break, and the article importer trims menu lines at the edges of Khmer pages.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>The lesson</h3>
+    <p style="margin:0">Check the path from model output to score before training anything new. Every Neam model is scored through exactly the same code the app uses (segmentation, windows, decoding, reconstruction and display rules), so a fix here applies to every model and every number.</p>
+  </div>
+</div></section>
+
+<section id="credits"><div class="wrap">
+  <div class="eyebrow">Credits</div>
+  <h2>Built on the work of</h2>
+  <div class="credits">
+    <div class="credit"><span class="who">Offset-preserving segmentation, reconstruction fixes</span><span class="badge ours">Neam</span><span class="what">Hidden-character handling, the position mapping and its checks, the span fixes, and using overlapping windows for Khmer NER.</span></div>
+    <div class="credit"><span class="who">khmer-nltk · Phan Viet Hoang</span><span class="badge lib">Library</span><span class="what">The word segmenter Neam calls (<a href="https://github.com/VietHoang1512/khmer-nltk">VietHoang1512/khmer-nltk</a>), written with Prof. Huong Le Thanh as advisor.</span></div>
+    <div class="credit"><span class="who">Khmer word segmentation with CRFs · Vichet Chea et al. (2015)</span><span class="badge kh-dev">Khmer NLP</span><span class="what">Research cited by khmer-nltk. The first author was at NIPTICT in Phnom Penh (<a href="https://att-astrec.nict.go.jp/member/ding/KhNLP2015-SEG.pdf">KhNLP 2015 paper</a>).</span></div>
+    <div class="credit"><span class="who">Khmer text segmentation articles · Phylypo Tum</span><span class="badge kh-dev">Khmer NLP</span><span class="what">Articles on CRF and dictionary-based Khmer word segmentation, also cited by khmer-nltk (<a href="https://medium.com/@phylypo/nlp-text-segmentation-using-dictionary-based-algorithms-6d0a45a76c08">Medium</a>).</span></div>
+    <div class="credit"><span class="who">Maximum-context window rule · Devlin et al. (Google BERT)</span><span class="badge lib">Method</span><span class="what">The "most context on the weaker side" rule, from BERT's SQuAD code for long documents.</span></div>
+    <div class="credit"><span class="who">Kampuchea Thmey, Fresh News, Khmer Press</span><span class="badge kh-dev">Khmer publishers</span><span class="what">The news articles Neam was trained and tested on. Their text is not redistributed; only positions are stored.</span></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="pager">
+    <a href="../subword-alignment/"><div class="card"><small>← Previous</small><b>Reading each word from its meaningful piece</b></div></a>
+    <a href="../"><div class="card" style="text-align:right"><small>All case studies →</small><b>Case studies</b></div></a>
+  </div>
+</div></section>
+<div class="end"><div class="wrap">Numbers are from the Neam preprint and release notes. Segmentation, windows and tags on this page were generated with the released model and code.</div></div>
+
+<script>
+(function(){
+  const root=document.documentElement, btn=document.getElementById('theme');
+  try{const t=localStorage.getItem('neam-theme'); if(t) root.dataset.theme=t;}catch(e){}
+  btn.addEventListener('click',()=>{
+    const dark=root.dataset.theme? root.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('neam-theme',root.dataset.theme);}catch(e){}
+  });
+})();
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+// ---- Step 1: hidden characters
+const ZW = {"raw":"\u178a\u17c3\u1794\u17c9\u17c7\u200b\u179f\u17c1\u200b \u1794\u17bb\u1793\u200b \u1796\u17b7\u179f\u17b8\u200b \u1790\u17b6\u200b\u1781\u17d2\u179b\u17bd\u1793\u200b\u1796\u17b7\u178f\u200b\u1787\u17b6\u200b\u179f\u17d2\u178f\u17b6\u1799\u200b\u178a\u17c2\u179b\u200b\u1780\u17d2\u179a\u17bb\u1798\u200b\u1780\u1784\u1796\u179b\u1792\u17c6\u200b\u179b\u17c1\u1781\u17e3\u200b \u200b\u1794\u17b6\u1793\u200b\u1792\u17d2\u179b\u17b6\u1780\u17cb\u200b\u1793\u17c5\u200b\u178f\u17d2\u179a\u17b9\u1798\u200b\u1787\u17bb\u17c6","clean":"\u178a\u17c3\u1794\u17c9\u17c7\u179f\u17c1 \u1794\u17bb\u1793 \u1796\u17b7\u179f\u17b8 \u1790\u17b6\u1781\u17d2\u179b\u17bd\u1793\u1796\u17b7\u178f\u1787\u17b6\u179f\u17d2\u178f\u17b6\u1799\u178a\u17c2\u179b\u1780\u17d2\u179a\u17bb\u1798\u1780\u1784\u1796\u179b\u1792\u17c6\u179b\u17c1\u1781\u17e3 \u1794\u17b6\u1793\u1792\u17d2\u179b\u17b6\u1780\u17cb\u1793\u17c5\u178f\u17d2\u179a\u17b9\u1798\u1787\u17bb\u17c6","words":[{"w":"\u178a\u17c3","s":0,"e":2},{"w":"\u1794\u17c9\u17c7","s":2,"e":5},{"w":"\u179f\u17c1","s":6,"e":8},{"w":"\u1794\u17bb\u1793","s":10,"e":13},{"w":"\u1796\u17b7\u179f\u17b8","s":15,"e":19},{"w":"\u1790\u17b6","s":21,"e":23},{"w":"\u1781\u17d2\u179b\u17bd\u1793","s":24,"e":29},{"w":"\u1796\u17b7\u178f\u1787\u17b6","s":30,"e":36},{"w":"\u179f\u17d2\u178f\u17b6\u1799","s":37,"e":42},{"w":"\u178a\u17c2\u179b","s":43,"e":46},{"w":"\u1780\u17d2\u179a\u17bb\u1798","s":47,"e":52},{"w":"\u1780\u1784\u1796\u179b","s":53,"e":57},{"w":"\u1792\u17c6","s":57,"e":59},{"w":"\u179b\u17c1\u1781","s":60,"e":63},{"w":"\u17e3","s":63,"e":64},{"w":"\u1794\u17b6\u1793","s":67,"e":70},{"w":"\u1792\u17d2\u179b\u17b6\u1780\u17cb","s":71,"e":77},{"w":"\u1793\u17c5","s":78,"e":80},{"w":"\u178f\u17d2\u179a\u17b9\u1798","s":81,"e":86},{"w":"\u1787\u17bb\u17c6","s":87,"e":90}]};
+(function(){
+  const HIDDEN = new Set(['​','‌','‍']);
+  const chars = [...ZW.raw.split('')];
+  document.getElementById('zwcount').textContent = chars.filter(c=>HIDDEN.has(c)).length;
+  document.getElementById('zwlen').textContent = chars.length;
+  const raw = document.getElementById('raw');
+  raw.innerHTML = chars.map((c,i)=> HIDDEN.has(c) ? `<span class="zw" data-i="${i}" title="zero-width space, position ${i}"></span>` : `<span class="ch" data-i="${i}">${esc(c)}</span>`).join('');
+  const chips = document.getElementById('wchips');
+  chips.innerHTML = ZW.words.map((w,k)=>`<button type="button" class="wchip" data-k="${k}">${esc(w.w)}</button>`).join('');
+  const out = document.getElementById('offset');
+  function pick(k){
+    const w = ZW.words[k];
+    chips.querySelectorAll('.wchip').forEach(b=>b.classList.toggle('on', +b.dataset.k===k));
+    raw.querySelectorAll('[data-i]').forEach(s=>{const i=+s.dataset.i; s.classList.toggle('hl', i>=w.s && i<w.e);});
+    const inside = chars.slice(w.s, w.e).filter(c=>HIDDEN.has(c)).length;
+    out.innerHTML = `Word ${k+1} <span class="kh">${esc(w.w)}</span> → characters <code>${w.s}–${w.e}</code> of the original text` + (inside ? `, including ${inside} hidden character${inside>1?'s':''} inside it.` : '.');
+  }
+  chips.addEventListener('click', e=>{const b=e.target.closest('.wchip'); if(b) pick(+b.dataset.k);});
+  pick(7);
+})();
+
+// ---- Step 2: windows
+const WIN = {"max_length":128,"windows":[[0,82],[40,125],[81,166],[125,210],[166,251],[171,254]],"words":[{"w":"លោក","n":1,"o":0,"t":"O"},{"w":"ឧត្តមសេនីយ៍","n":2,"o":0,"t":"O"},{"w":"ទោ","n":2,"o":0,"t":"O"},{"w":"ហេង","n":1,"o":0,"t":"B-PER"},{"w":"រតនា","n":1,"o":0,"t":"I-PER"},{"w":"ស្នងការ","n":2,"o":0,"t":"O"},{"w":"រង","n":2,"o":0,"t":"O"},{"w":"ទទួល","n":1,"o":0,"t":"O"},{"w":"ផែនការងារ","n":3,"o":0,"t":"O"},{"w":"នគរបាល","n":1,"o":0,"t":"O"},{"w":"ចរាចរណ៍","n":2,"o":0,"t":"O"},{"w":"បាន","n":1,"o":0,"t":"O"},{"w":"ព្រមាន","n":2,"o":0,"t":"O"},{"w":"ចាត់","n":2,"o":0,"t":"O"},{"w":"វិធានការ","n":2,"o":0,"t":"O"},{"w":"ចំពោះ","n":1,"o":0,"t":"O"},{"w":"អ្នកបើកបរ","n":2,"o":0,"t":"O"},{"w":"រថយន្ត","n":1,"o":0,"t":"O"},{"w":"បង្ក","n":2,"o":0,"t":"O"},{"w":"គ្រោះថ្នាក់","n":1,"o":0,"t":"O"},{"w":"ដល់","n":1,"o":0,"t":"O"},{"w":"អ្នក","n":1,"o":0,"t":"O"},{"w":"ដ៏ទៃ","n":2,"o":0,"t":"O"},{"w":"និង","n":1,"o":0,"t":"O"},{"w":"ព្យាយាម","n":2,"o":0,"t":"O"},{"w":"បើក","n":1,"o":0,"t":"O"},{"w":"រត់","n":2,"o":0,"t":"O"},{"w":"គេច","n":2,"o":0,"t":"O"},{"w":"ចេញ","n":1,"o":0,"t":"O"},{"w":"ពី","n":1,"o":0,"t":"O"},{"w":"កន្លែង","n":1,"o":0,"t":"O"},{"w":"កើត","n":1,"o":0,"t":"O"},{"w":"ហេតុ","n":2,"o":0,"t":"O"},{"w":"ត្រូវ","n":1,"o":0,"t":"O"},{"w":"ចាត់","n":2,"o":0,"t":"O"},{"w":"វិធានការ","n":2,"o":0,"t":"O"},{"w":"ច្បាប់","n":2,"o":0,"t":"O"},{"w":"ម៉ឺងម៉ាត់","n":2,"o":0,"t":"O"},{"w":"លើ","n":1,"o":0,"t":"O"},{"w":"អ្នកបើកបរ","n":2,"o":0,"t":"O"},{"w":"ស្រវឹង","n":2,"o":0,"t":"O"},{"w":"បង្ក","n":2,"o":0,"t":"O"},{"w":"គ្រោះថ្នាក់","n":1,"o":0,"t":"O"},{"w":"ហើយ","n":1,"o":0,"t":"O"},{"w":"រត់","n":2,"o":0,"t":"O"},{"w":"ទុក","n":2,"o":0,"t":"O"},{"w":"ឱ្យ","n":1,"o":0,"t":"O"},{"w":"តំណាង","n":1,"o":0,"t":"O"},{"w":"មក","n":1,"o":0,"t":"O"},{"w":"ដោះស្រាយ","n":2,"o":0,"t":"O"},{"w":"ជាមួយ","n":1,"o":0,"t":"O"},{"w":"ជនរងគ្រោះ","n":1,"o":0,"t":"O"},{"w":"។","n":1,"o":0,"t":"O"},{"w":"សូម","n":1,"o":0,"t":"O"},{"w":"ចុច","n":2,"o":0,"t":"O"},{"w":"Subscribe","n":3,"o":0,"t":"O"},{"w":"Channel","n":1,"o":0,"t":"O"},{"w":"Telegram","n":2,"o":0,"t":"O"},{"w":"កម្ពុជា","n":1,"o":0,"t":"B-ORG"},{"w":"ថ្មី","n":2,"o":0,"t":"I-ORG"},{"w":"ដើម្បី","n":1,"o":0,"t":"O"},{"w":"ទទួលបាន","n":1,"o":0,"t":"O"},{"w":"ព័ត៌មាន","n":2,"o":1,"t":"O"},{"w":"ថ្មី","n":2,"o":1,"t":"O"},{"w":"ៗ","n":2,"o":1,"t":"O"},{"w":"ទាន់ចិត្ត","n":3,"o":1,"t":"O"},{"w":"ដោយ","n":1,"o":1,"t":"O"},{"w":"មាន","n":1,"o":1,"t":"O"},{"w":"ការអនុញ្ញាត","n":2,"o":1,"t":"O"},{"w":"ពី","n":1,"o":1,"t":"O"},{"w":"លោក","n":1,"o":1,"t":"O"},{"w":"ឧត្តមសេនីយ៍","n":2,"o":1,"t":"O"},{"w":"ឯក","n":2,"o":1,"t":"O"},{"w":"ជួន","n":1,"o":1,"t":"B-PER"},{"w":"ណារិន្ទ","n":1,"o":1,"t":"I-PER"},{"w":"អគ្គ","n":1,"o":1,"t":"O"},{"w":"ស្នងការ","n":2,"o":1,"t":"O"},{"w":"រង","n":2,"o":1,"t":"O"},{"w":"និង","n":1,"o":1,"t":"O"},{"w":"ជា","n":1,"o":1,"t":"O"},{"w":"ស្នងការ","n":2,"o":1,"t":"B-ORG"},{"w":"នគរបាល","n":1,"o":1,"t":"I-ORG"},{"w":"រាជធានី","n":2,"o":1,"t":"I-ORG"},{"w":"ភ្នំពេញ","n":1,"o":1,"t":"I-ORG"},{"w":"កាលពី","n":1,"o":1,"t":"O"},{"w":"រសៀល","n":2,"o":1,"t":"O"},{"w":"ថ្ងៃទី","n":1,"o":1,"t":"O"},{"w":"១៦","n":1,"o":1,"t":"O"},{"w":"ខែតុលា","n":1,"o":1,"t":"O"},{"w":"ឆ្នាំ","n":1,"o":1,"t":"O"},{"w":"២០២៦","n":2,"o":1,"t":"O"},{"w":"លោក","n":1,"o":1,"t":"O"},{"w":"ឧត្តមសេនីយ៍","n":2,"o":1,"t":"O"},{"w":"ទោ","n":2,"o":1,"t":"O"},{"w":"ហេង","n":1,"o":1,"t":"B-PER"},{"w":"រតនា","n":1,"o":1,"t":"I-PER"},{"w":"និង","n":1,"o":1,"t":"O"},{"w":"លោក","n":1,"o":1,"t":"O"},{"w":"វរសេនីយ៍","n":2,"o":1,"t":"O"},{"w":"ឯក","n":2,"o":1,"t":"O"},{"w":"មួន","n":3,"o":1,"t":"B-PER"},{"w":"សុខា","n":1,"o":1,"t":"I-PER"},{"w":"ស្នងការ","n":2,"o":1,"t":"O"},{"w":"រង","n":2,"o":2,"t":"O"},{"w":"នៃ","n":1,"o":2,"t":"O"},{"w":"ស្នងការដ្ឋាន","n":2,"o":2,"t":"B-ORG"},{"w":"នគរបាល","n":1,"o":2,"t":"I-ORG"},{"w":"រាជធានី","n":2,"o":2,"t":"I-ORG"},{"w":"ភ្នំពេញ","n":1,"o":2,"t":"I-ORG"},{"w":"បាន","n":1,"o":2,"t":"O"},{"w":"អញ្ជើញ","n":1,"o":2,"t":"O"},{"w":"ដឹកនាំ","n":1,"o":2,"t":"O"},{"w":"កិច្ចប្រជុំ","n":1,"o":2,"t":"O"},{"w":"ផ្សព្វផ្សាយ","n":2,"o":2,"t":"O"},{"w":"និង","n":1,"o":2,"t":"O"},{"w":"ពង្រឹង","n":1,"o":2,"t":"O"},{"w":"ផែនការការងារ","n":3,"o":2,"t":"O"},{"w":"ថ្មី","n":2,"o":2,"t":"O"},{"w":"បន្ថែម","n":2,"o":2,"t":"O"},{"w":"ពិសេស","n":1,"o":2,"t":"O"},{"w":"ពង្រឹង","n":1,"o":2,"t":"O"},{"w":"កម្លាំង","n":1,"o":2,"t":"O"},{"w":"សមត្ថកិច្ច","n":1,"o":2,"t":"O"},{"w":"តាម","n":1,"o":2,"t":"O"},{"w":"គោលដៅ","n":2,"o":2,"t":"O"},{"w":"ទាំងអស់","n":2,"o":2,"t":"O"},{"w":"ដើម្បី","n":1,"o":2,"t":"O"},{"w":"សម្រួល","n":2,"o":2,"t":"O"},{"w":"ដល់","n":1,"o":2,"t":"O"},{"w":"លំហូរ","n":2,"o":2,"t":"O"},{"w":"ចរាចរណ៍","n":2,"o":2,"t":"O"},{"w":"ធ្វើដំណើរ","n":2,"o":2,"t":"O"},{"w":"របស់","n":1,"o":2,"t":"O"},{"w":"ប្រជាពលរដ្ឋ","n":1,"o":2,"t":"O"},{"w":"ឱ្យ","n":1,"o":2,"t":"O"},{"w":"មាន","n":1,"o":2,"t":"O"},{"w":"ភាពល្អ","n":3,"o":2,"t":"O"},{"w":"ប្រសើរ","n":2,"o":2,"t":"O"},{"w":"បញ្ចៀស","n":2,"o":2,"t":"O"},{"w":"បាន","n":1,"o":2,"t":"O"},{"w":"ពី","n":1,"o":2,"t":"O"},{"w":"ការកកស្ទះ","n":2,"o":2,"t":"O"},{"w":"ក្នុង","n":1,"o":2,"t":"O"},{"w":"ភូមិសាស្ត្រ","n":2,"o":2,"t":"O"},{"w":"រាជធានី","n":2,"o":2,"t":"B-LOC"},{"w":"ភ្នំពេញ","n":1,"o":3,"t":"I-LOC"},{"w":"។","n":1,"o":3,"t":"O"},{"w":"លោក","n":1,"o":3,"t":"O"},{"w":"ឧត្តមសេនីយ៍","n":2,"o":3,"t":"O"},{"w":"ទោ","n":2,"o":3,"t":"O"},{"w":"ហេង","n":1,"o":3,"t":"B-PER"},{"w":"រតនា","n":1,"o":3,"t":"I-PER"},{"w":"បាន","n":1,"o":3,"t":"O"},{"w":"សង្កត់ធ្ងន់","n":2,"o":3,"t":"O"},{"w":"ថា","n":1,"o":3,"t":"O"},{"w":"៖","n":1,"o":3,"t":"O"},{"w":"ចំពោះ","n":1,"o":3,"t":"O"},{"w":"ជន","n":1,"o":3,"t":"O"},{"w":"ឋិត","n":3,"o":3,"t":"O"},{"w":"ក្រោម","n":1,"o":3,"t":"O"},{"w":"ឥទ្ធិពល","n":2,"o":3,"t":"O"},{"w":"នៃ","n":1,"o":3,"t":"O"},{"w":"ជាតិ","n":2,"o":3,"t":"O"},{"w":"ស្រវឹង","n":2,"o":3,"t":"O"},{"w":"ហើយ","n":1,"o":3,"t":"O"},{"w":"បើកបរបង្ក","n":3,"o":3,"t":"O"},{"w":"គ្រោះថ្នាក់","n":1,"o":3,"t":"O"},{"w":"រួច","n":1,"o":3,"t":"O"},{"w":"ព្យាយាម","n":2,"o":3,"t":"O"},{"w":"បើក","n":1,"o":3,"t":"O"},{"w":"រត់","n":2,"o":3,"t":"O"},{"w":"គេច","n":2,"o":3,"t":"O"},{"w":"ពី","n":1,"o":3,"t":"O"},{"w":"កន្លែង","n":1,"o":3,"t":"O"},{"w":"កើត","n":1,"o":3,"t":"O"},{"w":"ហេតុ","n":2,"o":3,"t":"O"},{"w":"គឺ","n":1,"o":3,"t":"O"},{"w":"ត្រូវ","n":1,"o":3,"t":"O"},{"w":"ប្រឈមមុខ","n":2,"o":3,"t":"O"},{"w":"ជាមួយ","n":1,"o":3,"t":"O"},{"w":"នីតិវិធី","n":2,"o":3,"t":"O"},{"w":"របស់","n":1,"o":3,"t":"O"},{"w":"សមត្ថកិច្ច","n":1,"o":3,"t":"O"},{"w":"ដោយ","n":1,"o":3,"t":"O"},{"w":"ផ្ទាល់","n":2,"o":3,"t":"O"},{"w":"ពុំ","n":1,"o":3,"t":"O"},{"w":"អនុញ្ញាតឲ្យ","n":2,"o":3,"t":"O"},{"w":"មាន","n":1,"o":3,"t":"O"},{"w":"តំណាង","n":1,"o":3,"t":"O"},{"w":"ណា","n":2,"o":4,"t":"O"},{"w":"ម្នាក់","n":2,"o":4,"t":"O"},{"w":"ឬ","n":1,"o":4,"t":"O"},{"w":"ច្រើន","n":2,"o":4,"t":"O"},{"w":"នាក់","n":1,"o":4,"t":"O"},{"w":"មក","n":1,"o":4,"t":"O"},{"w":"ចចារ","n":3,"o":4,"t":"O"},{"w":"សម្របសម្រួល","n":2,"o":4,"t":"O"},{"w":"បញ្ចប់","n":2,"o":4,"t":"O"},{"w":"រឿង","n":1,"o":4,"t":"O"},{"w":"នៅ","n":1,"o":4,"t":"O"},{"w":"ហ្នឹង","n":2,"o":4,"t":"O"},{"w":"កន្លែង","n":1,"o":4,"t":"O"},{"w":"បាន","n":1,"o":4,"t":"O"},{"w":"ឡើយ","n":2,"o":4,"t":"O"},{"w":"ព្រោះ","n":1,"o":4,"t":"O"},{"w":"ជន","n":1,"o":4,"t":"O"},{"w":"បើកបរ","n":2,"o":4,"t":"O"},{"w":"គឺជា","n":1,"o":4,"t":"O"},{"w":"អ្នក","n":1,"o":4,"t":"O"},{"w":"បញ្ជា","n":2,"o":4,"t":"O"},{"w":"យាន្ត","n":3,"o":4,"t":"O"},{"w":"ហើយក៏","n":1,"o":4,"t":"O"},{"w":"ជា","n":1,"o":5,"t":"O"},{"w":"អ្នកបើកបរបង្ក","n":3,"o":5,"t":"O"},{"w":"ដោយ","n":1,"o":5,"t":"O"},{"w":"ផ្ទាល់","n":2,"o":5,"t":"O"},{"w":"។","n":1,"o":5,"t":"O"},{"w":"សមត្ថកិច្ច","n":1,"o":5,"t":"O"},{"w":"មិន","n":1,"o":5,"t":"O"},{"w":"អនុញ្ញាតឱ្យ","n":2,"o":5,"t":"O"},{"w":"មាន","n":1,"o":5,"t":"O"},{"w":"តំណាង","n":1,"o":5,"t":"O"},{"w":"ណា","n":2,"o":5,"t":"O"},{"w":"ម្នាក់","n":2,"o":5,"t":"O"},{"w":"មក","n":1,"o":5,"t":"O"},{"w":"ចរចា","n":2,"o":5,"t":"O"},{"w":"សម្របសម្រួល","n":2,"o":5,"t":"O"},{"w":"បញ្ចប់","n":2,"o":5,"t":"O"},{"w":"រឿង","n":1,"o":5,"t":"O"},{"w":"នៅ","n":1,"o":5,"t":"O"},{"w":"កន្លែង","n":1,"o":5,"t":"O"},{"w":"កើត","n":1,"o":5,"t":"O"},{"w":"ហេតុ","n":2,"o":5,"t":"O"},{"w":"ជំនួស","n":2,"o":5,"t":"O"},{"w":"ឡើយ","n":2,"o":5,"t":"O"},{"w":"ព្រោះ","n":1,"o":5,"t":"O"},{"w":"អ្នកបើកបរ","n":2,"o":5,"t":"O"},{"w":"ជា","n":1,"o":5,"t":"O"},{"w":"អ្នកបង្ក","n":2,"o":5,"t":"O"},{"w":"ដោយ","n":1,"o":5,"t":"O"},{"w":"ផ្ទាល់","n":2,"o":5,"t":"O"},{"w":"ដូច្នេះ","n":1,"o":5,"t":"O"},{"w":"ត្រូវតែ","n":1,"o":5,"t":"O"},{"w":"ទទួលខុសត្រូវ","n":2,"o":5,"t":"O"},{"w":"ចំពោះ","n":1,"o":5,"t":"O"},{"w":"មុខ","n":2,"o":5,"t":"O"},{"w":"ច្បាប់","n":2,"o":5,"t":"O"},{"w":"ជាធរមាន","n":2,"o":5,"t":"O"},{"w":"ដោយ","n":1,"o":5,"t":"O"},{"w":"គ្មាន","n":1,"o":5,"t":"O"},{"w":"ការលើកលែង","n":2,"o":5,"t":"O"},{"w":"នោះ","n":2,"o":5,"t":"O"},{"w":"ឡើយ","n":2,"o":5,"t":"O"},{"w":"៕","n":2,"o":5,"t":"O"}]};
+(function(){
+  const words = WIN.words, N = words.length, budget = WIN.max_length - 2;
+  const prefix = [0]; words.forEach(w=>prefix.push(prefix[prefix.length-1]+w.n));
+  const total = prefix[N];
+  document.getElementById('nwords').textContent = N;
+  document.getElementById('npieces').textContent = total;
+  // back-to-back chunks, filled greedily with whole words
+  const chunks = []; let s = 0;
+  while(s < N){ let e = s, used = 0; while(e < N && used + words[e].n <= budget){used += words[e].n; e++;} chunks.push([s,e]); s = e; }
+  const sets = {overlap: WIN.windows, chunks};
+  let mode = 'overlap', cur = +document.getElementById('slider').value;
+  const ctxOf = (w,[a,b]) => {
+    const L = a>0 ? prefix[w]-prefix[a] : Infinity, R = b<N ? prefix[b]-prefix[w+1] : Infinity;
+    return {L, R, m: Math.min(L,R)};
+  };
+  const bestOf = w => { let best=null, bm=-1; sets[mode].forEach((sp,k)=>{ if(sp[0]<=w && w<sp[1]){const m=ctxOf(w,sp).m; if(m>bm){bm=m;best=k;}} }); return {k:best, m:bm}; };
+  const weakCount = md => { const keep=mode; mode=md; let c=0; for(let w=0;w<N;w++) if(bestOf(w).m<16) c++; mode=keep; return c; };
+  document.getElementById('weakc').textContent = weakCount('chunks') + ' of ' + N;
+  document.getElementById('weako').textContent = weakCount('overlap') + ' of ' + N;
+  const x = i => (prefix[i]/total*100).toFixed(3)+'%';
+  const strip = document.getElementById('strip');
+  strip.insertAdjacentHTML('afterbegin', words.map((w,i)=>{
+    const t = w.t==='O' ? '' : w.t.slice(2);
+    return t ? `<i class="e" style="left:${x(i)};width:${(w.n/total*100).toFixed(3)}%;background:var(--${t.toLowerCase()})"></i>` : '';
+  }).join(''));
+  const slider = document.getElementById('slider'); slider.max = N-1;
+  const fmt = v => v===Infinity ? 'edge' : v;
+  function render(){
+    const sp = sets[mode], best = bestOf(cur);
+    document.getElementById('wrows').innerHTML = sp.map((s,k)=>{
+      const has = s[0]<=cur && cur<s[1];
+      return `<div class="wrow"><div class="wbar ${has?(k===best.k?'best':'has'):''}" style="left:${x(s[0])};width:calc(${x(s[1])} - ${x(s[0])})"><span>${mode==='overlap'?'window':'chunk'} ${k+1}</span></div></div>`;
+    }).join('');
+    document.getElementById('cursor').style.left = `calc(${x(cur)} + ${(words[cur].n/total*50).toFixed(3)}%)`;
+    const w = words[cur], t = w.t==='O' ? 'not a name' : w.t;
+    document.getElementById('wordnow').innerHTML = `Word ${cur+1} of ${N}: <span class="kh">${esc(w.w)}</span> <span class="muted small">(${w.n} piece${w.n>1?'s':''}, ${t})</span>`;
+    document.getElementById('ctx').innerHTML = sp.map((s,k)=>{
+      if(!(s[0]<=cur && cur<s[1])) return '';
+      const c = ctxOf(cur,s);
+      return `<div class="ctxc ${k===best.k?'best':''}"><b>${mode==='overlap'?'Window':'Chunk'} ${k+1}${k===best.k?' · used':''}</b>left <span class="m">${fmt(c.L)}</span> · right <span class="m">${fmt(c.R)}</span><br>weaker side <span class="m">${fmt(c.m)}</span></div>`;
+    }).join('');
+  }
+  slider.addEventListener('input',()=>{cur=+slider.value;render();});
+  const fromX = ev => { const r=strip.getBoundingClientRect(); const p=Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width))*total; let i=0; while(i<N-1 && prefix[i+1]<=p) i++; cur=i; slider.value=i; render(); };
+  let drag=false;
+  strip.addEventListener('pointerdown',e=>{drag=true;strip.setPointerCapture(e.pointerId);fromX(e);});
+  strip.addEventListener('pointermove',e=>{if(drag) fromX(e);});
+  strip.addEventListener('pointerup',()=>drag=false);
+  document.querySelectorAll('[data-w]').forEach(b=>b.addEventListener('click',()=>{
+    mode=b.dataset.w; document.querySelectorAll('[data-w]').forEach(x=>x.classList.toggle('on',x===b)); render();
+  }));
+  render();
+})();
+</script>
+</body>
+</html>
