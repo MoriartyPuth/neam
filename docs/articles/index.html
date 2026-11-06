@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Articles from a URL · Neam</title>
+<meta name="description" content="Fetch a public news page, keep only the article text, then tag it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/articles/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>Articles from a URL</h1>
+<p class="lead">Fetch a public news page, keep only the article text, then tag it.</p>
+<div class="code"><div class="bar"><span>Python</span><button class="copy" type="button">Copy</button></div><pre data-lang="python">from neam import Neam
+from neam.articles import extract_article_text
+
+text, status = extract_article_text(&quot;https://example.com/news/some-article&quot;)
+print(status)          # Loaded 1,582 characters from the article.
+
+result = Neam.from_pretrained(&quot;MoriartyPuth/neam&quot;).predict(text)</pre></div>
+<p><code>extract_article_text(url, max_chars=20000)</code> returns the article text and a short status message. The web app's <b>Import an online article</b> box uses the same function.</p>
+
+<h2 id="what-it-keeps">What it keeps</h2>
+<ul>
+<li>The page's main article body, found through common news-site containers, falling back to <code>&lt;main&gt;</code> or the page body.</li>
+<li>Scripts, styles, navigation, headers, footers, forms and share buttons are dropped.</li>
+<li>On Khmer pages, non-Khmer lines before the first Khmer line and after the last one (menus and footers) are trimmed.</li>
+<li>The text is cut to <code>max_chars</code>; the status says when that happened.</li>
+</ul>
+
+<h2 id="safety">Safety checks</h2>
+<ul>
+<li>Only complete <code>http://</code> or <code>https://</code> addresses, without user names or passwords.</li>
+<li>Every address, including each redirect, must resolve to a public internet address. Private and local networks are refused.</li>
+<li>At most five redirects, and at most 5 MB downloaded.</li>
+<li>Only HTML or plain-text responses.</li>
+</ul>
+<div class="note plain"><b>Respect the publisher.</b> News articles belong to their publishers. Tag them for your own analysis, but don't republish their text; Neam's own datasets store only positions, never article text.</div>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

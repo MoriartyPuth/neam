@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The output · Neam</title>
+<meta name="description" content="predict returns a dictionary with your text, the names found and the word-level detail behind them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/output/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>The output</h1>
+<p class="lead">predict returns a dictionary with your text, the names found and the word-level detail behind them.</p>
+<div class="code"><div class="bar"><span>Python</span><button class="copy" type="button">Copy</button></div><pre data-lang="python">result = ner.predict(text)
+result.keys()   # dict_keys([&#x27;text&#x27;, &#x27;entities&#x27;, &#x27;tokens&#x27;])</pre></div>
+
+<h2 id="entities">entities</h2>
+<p>A list of the names found, in reading order. This is the real result for the sentence on the previous page:</p>
+<div class="code"><div class="bar"><span>JSON</span><button class="copy" type="button">Copy</button></div><pre data-lang="json">[
+  {
+    &quot;start&quot;: 0,
+    &quot;end&quot;: 15,
+    &quot;label&quot;: &quot;PER&quot;,
+    &quot;text&quot;: &quot;លោក ហ៊ុន ម៉ាណែត&quot;,
+    &quot;score&quot;: 0.9663,
+    &quot;boundary_adjusted&quot;: true
+  },
+  {
+    &quot;start&quot;: 27,
+    &quot;end&quot;: 42,
+    &quot;label&quot;: &quot;ORG&quot;,
+    &quot;text&quot;: &quot;ក្រសួងសុខាភិបាល&quot;,
+    &quot;score&quot;: 0.9521
+  },
+  {
+    &quot;start&quot;: 44,
+    &quot;end&quot;: 58,
+    &quot;label&quot;: &quot;LOC&quot;,
+    &quot;text&quot;: &quot;រាជធានីភ្នំពេញ&quot;,
+    &quot;score&quot;: 0.9402
+  }
+]</pre></div>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Field</th><th>Type</th><th>Meaning</th></tr></thead><tbody><tr><td><code>label</code></td><td>str</td><td><code>"PER"</code>, <code>"ORG"</code> or <code>"LOC"</code>.</td></tr><tr><td><code>text</code></td><td>str</td><td>The name exactly as it appears in your input. Always equal to <code>text[start:end]</code>.</td></tr><tr><td><code>start</code>, <code>end</code></td><td>int</td><td>Python character positions in your original string, end exclusive. Zero-width characters you passed in are counted, so positions always match your text.</td></tr><tr><td><code>score</code></td><td>float</td><td>The average model confidence for the name's words. Useful for ranking, but not a calibrated probability of being correct.</td></tr><tr><td><code>boundary_adjusted</code></td><td>bool</td><td>Present only when a display rule moved an edge, for example joining the honorific <span class="kh">លោក</span> to the name.</td></tr></tbody></table></div>
+
+<h2 id="tokens">tokens</h2>
+<p>One entry per word, with its tag. Use it if you need word-level detail. The first four words of the same sentence:</p>
+<div class="code"><div class="bar"><span>JSON</span><button class="copy" type="button">Copy</button></div><pre data-lang="json">[
+  {
+    &quot;text&quot;: &quot;លោក&quot;,
+    &quot;start&quot;: 0,
+    &quot;end&quot;: 3,
+    &quot;tag&quot;: &quot;B-PER&quot;,
+    &quot;score&quot;: 0.7369,
+    &quot;model_tag&quot;: &quot;O&quot;
+  },
+  {
+    &quot;text&quot;: &quot;ហ៊ុន&quot;,
+    &quot;start&quot;: 4,
+    &quot;end&quot;: 8,
+    &quot;tag&quot;: &quot;I-PER&quot;,
+    &quot;score&quot;: 0.9432,
+    &quot;model_tag&quot;: &quot;B-PER&quot;
+  },
+  {
+    &quot;text&quot;: &quot;ម៉ាណែត&quot;,
+    &quot;start&quot;: 9,
+    &quot;end&quot;: 15,
+    &quot;tag&quot;: &quot;I-PER&quot;,
+    &quot;score&quot;: 0.9893
+  },
+  {
+    &quot;text&quot;: &quot;បាន&quot;,
+    &quot;start&quot;: 16,
+    &quot;end&quot;: 19,
+    &quot;tag&quot;: &quot;O&quot;,
+    &quot;score&quot;: 0.9992
+  }
+]</pre></div>
+<p><code>tag</code> uses IOB2: <code>B-</code> starts a name, <code>I-</code> continues it and <code>O</code> is outside any name. <code>model_tag</code> appears only when a display rule changed the model's own tag; here the rule joined <span class="kh">លោក</span> ("Mr.") to the name.</p>
+
+<h2 id="positions">A note on positions</h2>
+<p>Positions count Unicode code points, as Python strings do. All Khmer characters are in the Basic Multilingual Plane, so JavaScript's string indexes give the same numbers for Khmer text.</p>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

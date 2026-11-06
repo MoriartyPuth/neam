@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Limitations · Neam</title>
+<meta name="description" content="What Neam has not been tested on, and where it is known to be weak.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/limitations/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>Limitations</h1>
+<p class="lead">What Neam has not been tested on, and where it is known to be weak.</p>
+<ul>
+<li><b>Domain.</b> Trained and evaluated on news from Cambodian publishers, collected in September and October 2026. Social media, government documents, informal writing and older text have not been tested, and accuracy there is likely lower.</li>
+<li><b>Organization boundaries are the main weakness</b> (74.5 F1 on held-out news). Long institutional names are sometimes cut short or split into a designator and a name. Most organization errors are extra or mis-bounded predictions rather than misses.</li>
+<li><b>Small evaluation sets.</b> About 310 names in total, labelled by the same process as the training data. There has been no independent second-annotator agreement study.</li>
+<li><b>Word splitting.</b> Neam depends on khmer-nltk. Unusual spellings and transliterated foreign names can be split in ways that hurt name edges.</li>
+<li><b>Three types only.</b> Dates, numbers, products, events, laws and medals are not tagged. A person named inside an event or trophy name is part of the event, so it isn't tagged.</li>
+<li><b>Scores are confidences,</b> not calibrated probabilities of being correct.</li>
+</ul>
+<p>The labelling rules are in the <a href="https://github.com/MoriartyPuth/neam/blob/main/docs/annotation_policy.md">annotation policy</a>.</p>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eight decisions · Neam</title>
+<meta name="description" content="Each step in the pipeline fixed a measured problem. Here is what each one was for and what it brought.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/decisions/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>Eight decisions</h1>
+<p class="lead">Each step in the pipeline fixed a measured problem. Here is what each one was for and what it brought.</p>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th class="n">#</th><th>Decision</th><th class="n">Gain</th><th>Measured as</th></tr></thead><tbody><tr><td class="n">1</td><td><a href="#d1">Fix the scorer before anything else</a></td><td class="n">54.9 → 69.0</td><td>validation F1, same model</td></tr><tr><td class="n">2</td><td><a href="#d2">Split the text into words first</a></td><td class="n">—</td><td>needed for every later step</td></tr><tr><td class="n">3</td><td><a href="#d3">Read each word from its meaningful piece</a></td><td class="n">+2.3</td><td>matched tests, 3 of 3 won</td></tr><tr><td class="n">4</td><td><a href="#d4">Read long articles in overlapping windows</a></td><td class="n">+4.6 to 6.4</td><td>ORG F1, four comparisons</td></tr><tr><td class="n">5</td><td><a href="#d5">Ask seven models and average</a></td><td class="n">83.8 → 86.7</td><td>held-out F1, one model vs seven</td></tr><tr><td class="n">6</td><td><a href="#d6">Choose the best answer for the whole sentence</a></td><td class="n">+2.5 to 3.7</td><td>every model tested</td></tr><tr><td class="n">7</td><td><a href="#d7">Write one rulebook and teach it</a></td><td class="n">+5.4</td><td>held-out F1</td></tr><tr><td class="n">8</td><td><a href="#d8">Label the articles the model is unsure about</a></td><td class="n">+5.2</td><td>held-out F1, 21 articles</td></tr></tbody></table></div>
+<p>Gains are exact-span F1 points from the preprint. The test sets are small, so a single step's gain is uncertain; the overall gain from the first version to the release is +20.8 pooled F1 (95% range +13.5 to +28.6).</p>
+
+<h2 id="d1">1. Fix the scorer before anything else</h2>
+<p>Turning word labels back into character spans dropped punctuation inside names (U.S.A. came back as U.S.A) and mishandled prefixes, so correct answers were scored as wrong. Fixing it before any retraining was worth 14 points.</p>
+<h2 id="d2">2. Split the text into words first</h2>
+<p>The model labels one word at a time, and Khmer doesn't mark where words end. Every word also keeps its exact position, so answers point at the right characters.</p>
+<h2 id="d3">3. Read each word from its meaningful piece</h2>
+<p>A third of words begin with a blank "▁" piece, and the standard method read the label there. In matched tests the new method won every time. The release that introduced it rose 9.7 points, but it also changed the training recipe. <a href="../../case-studies/subword-alignment/">Case study</a>.</p>
+<h2 id="d4">4. Read long articles in overlapping windows</h2>
+<p>Back-to-back chunks leave words at the cut with context on one side only. Overall F1 barely moved (76.28 → 76.50), but long organization names, the most likely to be cut, improved every time.</p>
+<h2 id="d5">5. Ask seven models and average</h2>
+<p>Single models trained the same way differ by up to 8.6 F1. Averaging seven gives 86.7 on held-out news, against a single-model mean of 83.8, and removes the luck of one seed.</p>
+<h2 id="d6">6. Choose the best answer for the whole sentence</h2>
+<p>Choosing each word's tag alone can produce a name that continues without having started, which falls apart into fragments. Viterbi decoding picks the best valid sequence.</p>
+<h2 id="d7">7. Write one rulebook and teach it</h2>
+<p>Training data and test labels disagreed on recurring cases, such as nationality phrases and titles. A written annotation policy settled each case once, and 64 short training sentences taught the nationality rule.</p>
+<h2 id="d8">8. Label the articles the model is unsure about</h2>
+<p>Labelling is slow, so new articles were chosen where the models disagreed most. An AI drafted the labels and a person reviewed every one. Most of the gain was in organizations (+11.5).</p>
+<hr>
+<p>The original illustrated version of this story is still available as the <a href="../../walkthrough/">visual walkthrough</a>.</p>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

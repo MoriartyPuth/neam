@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scores · Neam</title>
+<meta name="description" content="Exact-span F1 on held-out Khmer news, by type, over time, and how certain the numbers are.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/scores/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>Scores</h1>
+<p class="lead">Exact-span F1 on held-out Khmer news, by type, over time, and how certain the numbers are.</p>
+<h2 id="metric">How it is scored</h2>
+<p>A predicted name counts as correct only if its type, its start and its end all match the reference exactly. A name with one wrong edge counts as one wrong prediction and one miss. Scores are F1 over all names, and every model is scored through exactly the same code the package uses.</p>
+
+<h2 id="release">The released model (v26)</h2>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th class="n">Names</th><th class="n">Precision</th><th class="n">Recall</th><th class="n">F1</th></tr></thead><tbody><tr><td><span class="lbl" data-l="PER">PER</span></td><td class="n">34</td><td class="n">100</td><td class="n">97.1</td><td class="n">98.5</td></tr><tr><td><span class="lbl" data-l="ORG">ORG</span></td><td class="n">68</td><td class="n">70.1</td><td class="n">79.4</td><td class="n">74.5</td></tr><tr><td><span class="lbl" data-l="LOC">LOC</span></td><td class="n">97</td><td class="n">91.8</td><td class="n">91.8</td><td class="n">91.8</td></tr><tr><td><b>All</b></td><td class="n">199</td><td class="n">85.0</td><td class="n">88.4</td><td class="n"><b>86.7</b></td></tr></tbody></table></div>
+<p>Held-out set: ten news articles that no model was trained on, 199 names. On the smaller validation set (five articles, 111 names) the release scores 82.3; pooled over both sets, 85.1. Resampling whole articles puts the held-out score between 78.5 and 93.4 (95%).</p>
+<p>Release 0.2.1 keeps the same weights and adds the line-break rule, which raises held-out to 86.98.</p>
+
+<h2 id="history">Over time</h2>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Model</th><th>Change</th><th class="n">Validation</th><th class="n">Held-out</th><th class="n">Pooled</th></tr></thead><tbody><tr><td>v12</td><td>baseline, with the scorer fixed</td><td class="n">68.1</td><td class="n">62.1</td><td class="n">64.3</td></tr><tr><td>v17</td><td>content-subword alignment, new training recipe</td><td class="n">73.5</td><td class="n">74.3</td><td class="n">74.0</td></tr><tr><td>v18</td><td>three models, Viterbi, windows</td><td class="n">77.8</td><td class="n">75.1</td><td class="n">76.1</td></tr><tr><td>v22</td><td>annotation policy and nationality curriculum</td><td class="n">79.0</td><td class="n">80.5</td><td class="n">79.9</td></tr><tr><td>v24</td><td>21 articles chosen by disagreement</td><td class="n">79.7</td><td class="n">85.7</td><td class="n">83.5</td></tr><tr><td><b>v26</b></td><td>10 more articles, seven models</td><td class="n"><b>82.3</b></td><td class="n"><b>86.7</b></td><td class="n"><b>85.1</b></td></tr></tbody></table></div>
+<p>From v12 to v26 the pooled gain is +20.8, with a 95% range of +13.5 to +28.6 when whole articles are resampled.</p>
+
+<h2 id="seeds">How much is luck</h2>
+<p>Seven models were trained for the release recipe, and every subset was scored. On held-out news, one model averages 83.8 (SD 2.5), three average 86.2, five average 86.8, and all seven score 86.7. The release uses all seven, with no subset chosen after scoring, so expect about 86 to 87 on similar news.</p>
+
+<h2 id="fresh">A later, fresh test</h2>
+<p>After the release, Neam was tested on news from the Ministry of Interior, a source it had never seen. It scored <b>82.1</b> overall and <b>70.8</b> on organizations (precision 63, recall 81): lower than on the original sources, as expected for new writing styles, with organization boundaries again the main weakness.</p>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

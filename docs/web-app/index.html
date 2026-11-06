@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The web app · Neam</title>
+<meta name="description" content="A small Gradio app to try Neam in the browser: paste text, or import an article by URL.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/web-app/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>The web app</h1>
+<p class="lead">A small Gradio app to try Neam in the browser: paste text, or import an article by URL.</p>
+<video src="../../neam-demo.mp4" poster="../../neam-demo-poster.jpg" controls muted playsinline preload="metadata" style="width:100%;height:auto;aspect-ratio:16/9;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);margin:0 0 8px" aria-label="Demo of the Neam app: typing a sentence, then importing an article by URL"></video>
+<p class="small" style="color:var(--muted);font-size:14px;margin:0 0 24px">A 42-second recording of the app on a laptop, at real speed.</p>
+
+<h2 id="run">Run it</h2>
+<p>The app is <code>app.py</code> in the repository. From a clone:</p>
+<div class="code"><div class="bar"><span>Terminal</span><button class="copy" type="button">Copy</button></div><pre data-lang="bash">pip install -e &quot;.[app]&quot;
+python app.py                       # http://127.0.0.1:7860
+python app.py --model /path/to/model --port 7861</pre></div>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Option</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td><code>--model</code></td><td><code>MoriartyPuth/neam</code></td><td>Hub model ID or a local folder.</td></tr><tr><td><code>--host</code></td><td><code>127.0.0.1</code></td><td>Only your own computer can open it. Change this only if you know you want others on your network to reach it.</td></tr><tr><td><code>--port</code></td><td><code>7860</code></td><td>The local port.</td></tr></tbody></table></div>
+
+<h2 id="use">What it does</h2>
+<ul>
+<li><b>Khmer text:</b> paste text and press <b>Identify entities</b>. Names are highlighted (people red, organizations green, places blue), with the full result below.</li>
+<li><b>Import an online article:</b> paste a public news URL and press <b>Load article text</b>. It uses <a href="../articles/"><code>extract_article_text</code></a>, with the same safety checks.</li>
+<li>Input is limited to 20,000 characters.</li>
+</ul>
+<p>The app runs on your machine. Nothing is sent anywhere except the article request you ask for.</p>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

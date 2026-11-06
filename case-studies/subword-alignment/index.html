@@ -7,7 +7,8 @@
 <meta name="description" content="Case study: why a third of Khmer words were being labelled from a blank piece, and how reading each word from its first meaningful piece became Neam's biggest single improvement.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Khmer:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
 <link rel="stylesheet" href="../cs.css">
 <style>
 .words{display:flex;flex-wrap:wrap;gap:10px}
@@ -36,23 +37,23 @@
 @media (max-width:520px){.bc{grid-template-columns:110px 1fr 46px}}
 </style>
 </head>
-<body>
-<nav class="top"><div class="wrap">
-  <a class="brand" href="../../">Neam <span class="kh">នាម</span></a>
-  <div class="links">
-    <a href="../">Case studies</a><a href="#problem">Problem</a><a href="#try">Try it</a><a href="#fix">Fix</a><a href="#evidence">Evidence</a><a href="#prior">Prior work</a><a href="#credits">Credits</a>
-  </div>
-  <button class="iconbtn" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
-</div></nav>
+<body data-root="../../" data-page="case-studies/subword-alignment/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="cs">
 
 <header class="hero"><div class="wrap">
   <h1>Reading each word from its meaningful piece</h1>
-  <p class="lede">About a third of Khmer words were being labelled from a blank piece that looks the same for every word. Moving the label one piece to the right won every matched training run, and the release that introduced it was the largest single step in Neam's history.</p>
-  <div class="facts">
-    <div class="fact"><b>37%</b><span>of words begin with a blank "▁" piece</span></div>
-    <div class="fact good"><b>+2.3</b><span>F1 points on average in matched runs where only this changed (3 of 3 seeds won)</span></div>
-    <div class="fact"><b>+9.7</b><span>F1 points at the release step that introduced it, together with a new training recipe</span></div>
-  </div>
+  <p class="lede">About a third of Khmer words were being labelled from a blank piece that looks the same for every word. Moving the label to the first piece with letters improved all three matched training runs.</p>
+  <h2 style="margin-top:28px">Summary</h2>
+  <div class="tbl-wrap"><table class="tbl sum">
+    <thead><tr><th>Finding</th><th>Evidence</th><th>Size</th></tr></thead>
+    <tbody>
+      <tr><td>Words whose label was read from a blank "▁" piece</td><td>Validation set, 2,088 words</td><td>37.4% of words, 33.6% of name starts</td></tr>
+      <tr><td>Effect of the fix alone</td><td>Matched runs, only the label position changed; 3 seeds</td><td>+2.3 F1 on average; 3 of 3 seeds better</td></tr>
+      <tr><td>Release that introduced it (v17)</td><td>Not controlled: the training recipe also changed</td><td>+9.7 pooled F1 (95% range +3.5 to +16.4)</td></tr>
+    </tbody>
+  </table></div>
 </div></header>
 
 <section id="problem"><div class="wrap">
@@ -116,8 +117,8 @@ for position, word_id in enumerate(word_ids):
   <div class="eyebrow">Evidence</div>
   <h2>Does it really help?</h2>
   <div class="plain"><b>In plain words:</b> we trained pairs of models that were identical except for this one choice. The new method won every time once the models were trained properly. That controlled test is the real evidence. The release that introduced it also jumped a lot, but other things changed in that release too, so the bigger number can't all be credited to this fix.</div>
-  <div class="grid2">
-    <div class="card">
+  <div class="block">
+    <div class="block">
       <h3>Controlled test: only the label position changes</h3>
       <p class="small" style="margin:0 0 6px"><b>This is the evidence that the fix itself helps.</b></p>
       <p class="small muted">Validation F1 (%), five epochs, same data and settings, three seeds.</p>
@@ -132,7 +133,7 @@ for position, word_id in enumerate(word_ids):
       </table></div>
       <p class="small muted" style="margin:10px 0 0">The new method found 3 to 5 more exact entities on every seed, and organizations improved every time.</p>
     </div>
-    <div class="card">
+    <div class="block">
       <h3>In the release history (not a controlled test)</h3>
       <p class="small muted">v12 → v17, the release that introduced the fix. Exact-span F1 (%).</p>
       <div class="barcmp">
@@ -146,7 +147,7 @@ for position, word_id in enumerate(word_ids):
       <p class="small muted" style="margin:12px 0 0">Pooled over both test sets the step was worth <b>+9.7</b> points (95% range +3.5 to +16.4), so the release clearly improved. But v17 also changed how models were trained (one five-epoch run from the base model, at a higher learning rate), and it was the best of three seeds. With the old first-piece method, the new recipe scored about the same as v12 (68.88 vs 69.03 validation), which suggests the alignment did much of the work. Still, read +9.7 as the gain of the whole release, not of alignment alone.</p>
     </div>
   </div>
-  <div class="card" style="margin-top:16px">
+  <div class="block">
     <h3>Where it does not help</h3>
     <p style="margin:0">With only two training epochs, both methods underfit and the advantage disappears (56.34 vs 54.83 mean). The model needs enough training for its labelling layer to use the extra information. The controlled runs used the validation labels of the time (107 entities) and the evaluation sets are small, so the exact size of the gain is uncertain even though its direction is not.</p>
   </div>
@@ -156,15 +157,15 @@ for position, word_id in enumerate(word_ids):
   <div class="eyebrow">Prior work</div>
   <h2>What was known, and what Neam adds</h2>
   <div class="plain"><b>In plain words:</b> other developers had already run into the blank piece, and researchers have compared ways of reading a word from its pieces. We didn't find anyone who measured this exact problem for Khmer and showed how much fixing it is worth.</div>
-  <div class="stack">
-    <div class="card">
+  <div class="block">
+    <div class="block">
       <h3>Already known</h3>
       <ul style="margin:0;padding-left:20px">
         <li>The stand-alone "▁" piece has been reported by developers using the multilingual XLM-R model, for example in Hugging Face Transformers issues <a href="https://github.com/huggingface/transformers/issues/8958">#8958</a> and <a href="https://github.com/huggingface/transformers/issues/9637">#9637</a>. In practice, people often work around it.</li>
         <li>Ács, Kádár and Kornai, <a href="https://aclanthology.org/2021.eacl-main.194">"Subword Pooling Makes a Difference"</a> (EACL 2021), compared first-piece, last-piece and learned ways of reading a word, across nine languages.</li>
       </ul>
     </div>
-    <div class="card">
+    <div class="block">
       <h3>What Neam adds</h3>
       <ul style="margin:0;padding-left:20px">
         <li>Measures how often the blank piece decides a Khmer word's label: 37.4% of words and 33.6% of name starts.</li>
@@ -189,24 +190,12 @@ for position, word_id in enumerate(word_ids):
   </div>
 </div></section>
 
-<section><div class="wrap">
-  <div class="pager">
-    <a href="../"><div class="card"><small>← All case studies</small><b>Case studies</b></div></a>
-    <a href="../reading-an-article/"><div class="card" style="text-align:right"><small>Next →</small><b>How Neam reads a Khmer article</b></div></a>
-  </div>
-</div></section>
-<div class="end"><div class="wrap">Numbers are from the Neam preprint (v26 release). Tokenizer pieces and tags on this page were generated with the released model.</div></div>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
 
 <script>
-(function(){
-  const root=document.documentElement, btn=document.getElementById('theme');
-  try{const t=localStorage.getItem('neam-theme'); if(t) root.dataset.theme=t;}catch(e){}
-  btn.addEventListener('click',()=>{
-    const dark=root.dataset.theme? root.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-    root.dataset.theme=dark?'light':'dark';
-    try{localStorage.setItem('neam-theme',root.dataset.theme);}catch(e){}
-  });
-})();
 
 const EXAMPLES = [{"gloss":"Royal Government of Cambodia","text":"រាជរដ្ឋាភិបាលកម្ពុជា","words":[{"w":"រាជ","pieces":["▁","រាជ"],"first":0,"content":1,"tag":"B-ORG"},{"w":"រដ្ឋាភិបាល","pieces":["▁រដ្ឋាភិបាល"],"first":0,"content":0,"tag":"I-ORG"},{"w":"កម្ពុជា","pieces":["▁កម្ពុជា"],"first":0,"content":0,"tag":"I-ORG"}]},{"gloss":"Mr. Hun Manet met with the Ministry of Health in Phnom Penh.","text":"លោក ហ៊ុន ម៉ាណែត បានជួបជាមួយក្រសួងសុខាភិបាលនៅរាជធានីភ្នំពេញ។","words":[{"w":"លោក","pieces":["▁លោក"],"first":0,"content":0,"tag":"O"},{"w":"ហ៊ុន","pieces":["▁ហ៊ុន"],"first":0,"content":0,"tag":"B-PER"},{"w":"ម៉ាណែត","pieces":["▁ម៉ាណែត"],"first":0,"content":0,"tag":"I-PER"},{"w":"បាន","pieces":["▁បាន"],"first":0,"content":0,"tag":"O"},{"w":"ជួប","pieces":["▁ជួប"],"first":0,"content":0,"tag":"O"},{"w":"ជាមួយ","pieces":["▁ជាមួយ"],"first":0,"content":0,"tag":"O"},{"w":"ក្រសួង","pieces":["▁ក្រសួង"],"first":0,"content":0,"tag":"B-ORG"},{"w":"សុខាភិបាល","pieces":["▁","សុខាភិបាល"],"first":0,"content":1,"tag":"I-ORG"},{"w":"នៅ","pieces":["▁នៅ"],"first":0,"content":0,"tag":"O"},{"w":"រាជធានី","pieces":["▁","រាជធានី"],"first":0,"content":1,"tag":"B-LOC"},{"w":"ភ្នំពេញ","pieces":["▁ភ្នំពេញ"],"first":0,"content":0,"tag":"I-LOC"},{"w":"។","pieces":["▁។"],"first":0,"content":0,"tag":"O"}]},{"gloss":"The Royal University of Phnom Penh and the Ministry of Education, Youth and Sport held a forum in Siem Reap province, joined by Mr. Sor Pheakdey.","text":"សាកលវិទ្យាល័យភូមិន្ទភ្នំពេញ និងក្រសួងអប់រំ យុវជន និងកីឡា បានរៀបចំវេទិកាមួយនៅខេត្តសៀមរាប ដោយមានការចូលរួមពីលោក ស ភក្តី។","words":[{"w":"សាកលវិទ្យាល័យ","pieces":["▁","សាកលវិទ្យាល័យ"],"first":0,"content":1,"tag":"B-ORG"},{"w":"ភូមិន្ទ","pieces":["▁","ភូមិន្ទ"],"first":0,"content":1,"tag":"I-ORG"},{"w":"ភ្នំពេញ","pieces":["▁ភ្នំពេញ"],"first":0,"content":0,"tag":"I-ORG"},{"w":"និង","pieces":["▁និង"],"first":0,"content":0,"tag":"O"},{"w":"ក្រសួង","pieces":["▁ក្រសួង"],"first":0,"content":0,"tag":"B-ORG"},{"w":"អប់រំ","pieces":["▁","អប់រំ"],"first":0,"content":1,"tag":"I-ORG"},{"w":"យុវជន","pieces":["▁យុវជន"],"first":0,"content":0,"tag":"I-ORG"},{"w":"និង","pieces":["▁និង"],"first":0,"content":0,"tag":"I-ORG"},{"w":"កីឡា","pieces":["▁","កីឡា"],"first":0,"content":1,"tag":"I-ORG"},{"w":"បាន","pieces":["▁បាន"],"first":0,"content":0,"tag":"O"},{"w":"រៀបចំ","pieces":["▁រៀបចំ"],"first":0,"content":0,"tag":"O"},{"w":"វេទិកា","pieces":["▁","វេទិកា"],"first":0,"content":1,"tag":"O"},{"w":"មួយ","pieces":["▁","មួយ"],"first":0,"content":1,"tag":"O"},{"w":"នៅ","pieces":["▁នៅ"],"first":0,"content":0,"tag":"O"},{"w":"ខេត្ត","pieces":["▁ខេត្ត"],"first":0,"content":0,"tag":"B-LOC"},{"w":"សៀមរាប","pieces":["▁","សៀមរាប"],"first":0,"content":1,"tag":"I-LOC"},{"w":"ដោយ","pieces":["▁ដោយ"],"first":0,"content":0,"tag":"O"},{"w":"មាន","pieces":["▁មាន"],"first":0,"content":0,"tag":"O"},{"w":"ការចូលរួម","pieces":["▁","ការចូលរួម"],"first":0,"content":1,"tag":"O"},{"w":"ពី","pieces":["▁ពី"],"first":0,"content":0,"tag":"O"},{"w":"លោក","pieces":["▁លោក"],"first":0,"content":0,"tag":"O"},{"w":"ស","pieces":["▁ស"],"first":0,"content":0,"tag":"B-PER"},{"w":"ភក្តី","pieces":["▁ភក្តី"],"first":0,"content":0,"tag":"I-PER"},{"w":"។","pieces":["▁។"],"first":0,"content":0,"tag":"O"}]}];
 let ex = 0, method = 'content';

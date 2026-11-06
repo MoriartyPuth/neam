@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install · Neam</title>
+<meta name="description" content="One pip command. The model downloads itself the first time you use it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/install/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>Install</h1>
+<p class="lead">One pip command. The model downloads itself the first time you use it.</p>
+<h2 id="pip">With pip</h2>
+<div class="code"><div class="bar"><span>Terminal</span><button class="copy" type="button">Copy</button></div><pre data-lang="bash">pip install neam</pre></div>
+<p>Neam needs Python 3.10 or newer. It installs PyTorch, Transformers, the Hugging Face Hub client, khmer-nltk for word splitting, and the libraries used to read web articles.</p>
+<div class="note"><b>GPU?</b> Neam runs well on a CPU. If you want a GPU, install the PyTorch build for your machine from <a href="https://pytorch.org/get-started/locally/">pytorch.org</a> first, then install Neam.</div>
+
+<h2 id="app">With the web app</h2>
+<div class="code"><div class="bar"><span>Terminal</span><button class="copy" type="button">Copy</button></div><pre data-lang="bash">pip install &quot;neam[app]&quot;</pre></div>
+<p>This adds Gradio for the <a href="../web-app/">web app</a>. The app itself lives in the repository, so run it from a clone.</p>
+
+<h2 id="model">The model download</h2>
+<p>The first time you load Neam, it downloads the model from the Hugging Face Hub (<a href="https://huggingface.co/MoriartyPuth/neam">MoriartyPuth/neam</a>, about 265 MB) and caches it. Later runs load from the cache and work offline. You can also point Neam at a local folder; see <a href="../first-prediction/#loading">loading options</a>.</p>
+
+<h2 id="source">From source</h2>
+<div class="code"><div class="bar"><span>Terminal</span><button class="copy" type="button">Copy</button></div><pre data-lang="bash">git clone https://github.com/MoriartyPuth/neam.git
+cd neam
+pip install -e &quot;.[app]&quot;
+python -m unittest discover -s tests</pre></div>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

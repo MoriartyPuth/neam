@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The pipeline · Neam</title>
+<meta name="description" content="What happens inside one predict call, in six steps.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/pipeline/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>The pipeline</h1>
+<p class="lead">What happens inside one predict call, in six steps.</p>
+<ol class="steps">
+<li><b>Split into words</b>Khmer has no spaces between words, so the text is split with khmer-nltk. Zero-width characters (U+200B/C/D) are removed only from what the model reads; every word keeps its start and end in your original text.</li>
+<li><b>Read each word from its meaningful piece</b>The model cuts words into subword pieces, and a third of Khmer words begin with a blank "▁" piece. Each word's label is read from its first piece with real letters. <a href="../../case-studies/subword-alignment/">Case study</a>.</li>
+<li><b>Overlapping windows</b>Windows of up to 128 pieces overlap by about half; each word is read from the window where it has the most context on its weaker side. <a href="../../case-studies/reading-an-article/#windows">Case study</a>.</li>
+<li><b>Seven-model average</b>Seven models, trained the same way with different random seeds, each give word probabilities, which are averaged. A fixed bias then slightly favours ORG (×1.2) and disfavours O (×0.9) and LOC (×0.85).</li>
+<li><b>Best valid sequence</b>Viterbi decoding picks the best tag sequence in which no name continues before it has started, instead of choosing each word's tag alone.</li>
+<li><b>Display rules</b>Short honorifics such as <span class="kh">លោក</span> join a name, ceremonial titles stay outside it, place designators (<span class="kh">ខេត្ត</span>, <span class="kh">ស្រុក</span>) are completed, nationality phrases are not places, and punctuation and spaces are trimmed from the edges.</li>
+</ol>
+
+<h2 id="settings">Settings of the released model</h2>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Setting</th><th>Value</th></tr></thead><tbody><tr><td>Base model</td><td><a href="https://huggingface.co/seanghay/albert-khmer-small">seanghay/albert-khmer-small</a> (Khmer ALBERT)</td></tr><tr><td>Parameters per model</td><td>9.31M (7.3M trained; word embeddings frozen)</td></tr><tr><td>Models in the ensemble</td><td>7 (seeds 42 to 48, all kept, none chosen after scoring)</td></tr><tr><td>Training</td><td>5 epochs, learning rate 3e-5 (AdamW), batch 8 with accumulation 2</td></tr><tr><td>Window size</td><td>128 subwords, about half overlap</td></tr><tr><td>Label position</td><td>first content subword</td></tr><tr><td>Decoding</td><td>constrained IOB2 Viterbi</td></tr><tr><td>Label bias</td><td>O ×0.9, ORG ×1.2, LOC ×0.85</td></tr></tbody></table></div>
+<p>The model folder on the Hub holds the seven members and this file, which tells the package how to combine them:</p>
+<div class="code"><div class="bar"><span>ensemble.json</span><button class="copy" type="button">Copy</button></div><pre data-lang="json">{
+  &quot;members&quot;: [
+    &quot;members/m0-s42&quot;,
+    &quot;members/m1-s43&quot;,
+    &quot;members/m2-s44&quot;,
+    &quot;members/m3-s45&quot;,
+    &quot;members/m4-s46&quot;,
+    &quot;members/m5-s47&quot;,
+    &quot;members/m6-s48&quot;
+  ],
+  &quot;decoding&quot;: &quot;viterbi&quot;,
+  &quot;context_windows&quot;: &quot;overlap&quot;,
+  &quot;note&quot;: &quot;Neam ensemble: member softmax probabilities are averaged, then decoded.&quot;
+}</pre></div>
+
+<h2 id="why">Why each step is there</h2>
+<p>Every step was added to fix a measured problem. <a href="../decisions/">Eight decisions</a> tells that story, with the gain each one brought.</p>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

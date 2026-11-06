@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Long texts · Neam</title>
+<meta name="description" content="There is no length limit in the library. Long text is read in overlapping windows, and names never cross a line break.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/long-texts/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>Long texts</h1>
+<p class="lead">There is no length limit in the library. Long text is read in overlapping windows, and names never cross a line break.</p>
+<h2 id="windows">How long text is read</h2>
+<p>Each model reads at most 128 subword pieces at a time, and a news article is usually several hundred. Neam splits long text into windows that overlap by about half, and takes each word's answer from the window where that word has the most context on its weaker side. Words near a window edge are never stuck with one-sided context.</p>
+<p>See the <a href="../../case-studies/reading-an-article/#windows">window visualizer</a> for an interactive example.</p>
+
+<h2 id="lines">Line breaks</h2>
+<p>Text is processed line by line, keeping the positions of the whole document. A name never continues across a line break, so a heading, a menu item or the end of a paragraph can't be glued to the next line. This changed in release 0.2.1 and raised the held-out score from 86.70 to 86.98.</p>
+
+<h2 id="speed">Speed</h2>
+<p>On a laptop CPU, a 1,600-character article takes about 2 seconds with all seven models. Time grows roughly in line with the number of windows, so a document twice as long takes about twice as long.</p>
+<div class="note plain"><b>The web app limits input</b> to 20,000 characters to keep the shared page responsive. The library itself has no limit.</div>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

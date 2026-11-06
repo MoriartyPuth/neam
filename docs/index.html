@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Introduction · Neam</title>
+<meta name="description" content="Neam finds people, organizations and places in Khmer text and returns exactly where each one is.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-root="../" data-page="docs/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>Introduction</h1>
+<p class="lead">Neam finds people, organizations and places in Khmer text and returns exactly where each one is.</p>
+<p>Neam (<span class="kh">នាម</span>, "name, noun") is a named entity recognizer for Khmer. Give it Khmer text and it marks three kinds of names:</p>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Label</th><th>What it marks</th><th>Example</th></tr></thead><tbody><tr><td><span class="lbl" data-l="PER">PER</span></td><td>People, with a short honorific such as <span class="kh">លោក</span></td><td><span class="ent kh" data-l="PER">លោក ហ៊ុន ម៉ាណែត<sub>PER</sub></span></td></tr><tr><td><span class="lbl" data-l="ORG">ORG</span></td><td>Ministries, companies, universities, teams and other organizations</td><td><span class="ent kh" data-l="ORG">ក្រសួងសុខាភិបាល<sub>ORG</sub></span></td></tr><tr><td><span class="lbl" data-l="LOC">LOC</span></td><td>Countries, provinces, cities and named places</td><td><span class="ent kh" data-l="LOC">រាជធានីភ្នំពេញ<sub>LOC</sub></span></td></tr></tbody></table></div>
+<p>For every name it returns the label, the text, and its start and end position in your original string, so you can highlight it, link it or count it without searching the text again.</p>
+
+<h2 id="what-you-get">What you get</h2>
+<ul>
+<li><b>A Python library.</b> <code>pip install neam</code>, then one call: <code>ner.predict(text)</code>.</li>
+<li><b>Offline and small.</b> Seven models of 9.3 million parameters each, about 265 MB in total. It runs on an ordinary laptop CPU, with no server or API key.</li>
+<li><b>Evaluated on held-out news.</b> 86.7 exact-span F1 on ten held-out Khmer news articles. A name only counts if its type and both of its edges are exactly right.</li>
+<li><b>Open.</b> Code and weights under Apache-2.0, with a preprint describing every step.</li>
+</ul>
+
+<h2 id="where-it-works">Where it works best</h2>
+<p>Neam was trained and tested on Cambodian news. It is strongest on people (98.5 F1) and places (91.8) and weakest on long organization names (74.5). Social media, government documents and older text have not been tested. See <a href="../docs/limitations/">Limitations</a>.</p>
+
+<h2 id="next">Where to next</h2>
+<ul>
+<li><a href="install/">Install</a> the package and <a href="first-prediction/">run your first prediction</a>.</li>
+<li>Read <a href="pipeline/">the pipeline</a> to see what happens inside <code>predict</code>.</li>
+<li>Look at the <a href="scores/">scores</a> and the <a href="../case-studies/">case studies</a>.</li>
+</ul>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../assets/site.js"></script>
+</body>
+</html>

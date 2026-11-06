@@ -7,7 +7,8 @@
 <meta name="description" content="Case study: how Neam turns a Khmer news article into words without losing a character, reads long articles in overlapping windows, and maps every answer back to the exact spot in the text.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Khmer:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
 <link rel="stylesheet" href="../cs.css">
 <style>
 /* hidden characters */
@@ -21,14 +22,6 @@
 .wchip.on,.wchip:hover{border-color:var(--loc);box-shadow:0 0 0 3px color-mix(in srgb,var(--loc) 20%,transparent)}
 .offset{margin-top:12px;font-size:15px;min-height:1.6em}
 .offset code{background:var(--surface-2);padding:1px 6px;border-radius:6px}
-.flow{display:grid;grid-template-columns:1fr 32px 1fr 32px 1fr;align-items:stretch;gap:0;margin-top:6px}
-.flow>.card{padding:16px}
-.flow .ar{display:grid;place-items:center;color:var(--muted);font-size:22px}
-.flow h3{font-size:15px}
-.flow p{font-size:14px;color:var(--muted);margin:0}
-/* lessons */
-.lesson .num{font:800 30px Inter,sans-serif;letter-spacing:-.02em;color:var(--good)}
-.lesson .num s{color:var(--muted);text-decoration-thickness:2px;font-weight:600;font-size:22px;margin-right:6px}
 /* windows */
 .wv{position:relative;margin-top:8px}
 .wrows{display:flex;flex-direction:column;gap:5px}
@@ -48,31 +41,23 @@
 .ctxc .m{font:600 13px "JetBrains Mono",monospace}
 .wordnow{font-size:15px;margin-top:14px}
 .wordnow .kh{font-size:20px}
-.weak{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-.weak .fact b{font-size:24px}
 input[type=range]{width:100%;accent-color:var(--accent)}
-@media (max-width:760px){.flow{grid-template-columns:1fr}.flow .ar{transform:rotate(90deg);height:28px}.weak{grid-template-columns:1fr}}
+
 </style>
 </head>
-<body>
-<nav class="top"><div class="wrap">
-  <a class="brand" href="../../">Neam <span class="kh">នាម</span></a>
-  <div class="links">
-    <a href="../">Case studies</a><a href="#hidden">Hidden characters</a><a href="#windows">Windows</a><a href="#back">Back to the text</a><a href="#credits">Credits</a>
-  </div>
-  <button class="iconbtn" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
-</div></nav>
+<body data-root="../../" data-page="case-studies/reading-an-article/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="cs">
 
 <header class="hero"><div class="wrap">
   <h1>How Neam reads a Khmer article</h1>
   <p class="lede">Real news text is full of invisible characters, and articles are longer than the model can read at once. Neam has to cut the text into words, read it in pieces and still point every answer at the exact characters in the original. This page follows an invented, news-style article through those steps.</p>
-  <div class="flow" style="margin-top:28px">
-    <div class="card"><h3>1. Hidden characters</h3><p>Remove them for the model only, and keep every word's original position.</p></div>
-    <div class="ar">→</div>
-    <div class="card"><h3>2. Overlapping windows</h3><p>Read long articles in overlapping windows, and take each word from the window where it has the most context.</p></div>
-    <div class="ar">→</div>
-    <div class="card"><h3>3. Back to the text</h3><p>Turn word labels into character spans that match the original exactly.</p></div>
-  </div>
+  <ol class="steps" style="margin-top:24px">
+    <li><b>Hidden characters</b>Remove them for the model only, and keep every word's original position.</li>
+    <li><b>Overlapping windows</b>Read long articles in overlapping windows, and take each word from the window where it has the most context.</li>
+    <li><b>Back to the text</b>Turn word labels into character spans that match the original exactly.</li>
+  </ol>
 </div></header>
 
 <section id="hidden"><div class="wrap">
@@ -121,18 +106,18 @@ for piece in segmenter(clean):
     <input type="range" id="slider" min="0" value="80" aria-label="Choose a word in the article" style="margin-top:12px">
     <div class="wordnow" id="wordnow" aria-live="polite"></div>
     <div class="ctx" id="ctx"></div>
-    <div class="weak">
-      <div class="fact"><b id="weakc"></b><span>words with fewer than 16 pieces of context on their weaker side, back-to-back chunks</span></div>
-      <div class="fact good"><b id="weako"></b><span>with Neam's overlapping windows</span></div>
-    </div>
+    <div class="tbl-wrap" style="margin-top:16px"><table class="tbl sum">
+      <thead><tr><th>Method</th><th>Words with fewer than 16 pieces of context on their weaker side</th></tr></thead>
+      <tbody><tr><td>Back-to-back chunks</td><td id="weakc"></td></tr><tr><td>Neam's overlapping windows</td><td id="weako"></td></tr></tbody>
+    </table></div>
     <p class="small muted" style="margin:12px 0 0">Coloured ticks under the strip are the names Neam found: <span style="color:var(--per)">people</span>, <span style="color:var(--org)">organizations</span>, <span style="color:var(--loc)">places</span>. The article edges count as full context, because there is nothing more to read.</p>
   </div>
-  <div class="grid2" style="margin-top:16px">
-    <div class="card">
+  <div class="block">
+    <div class="block">
       <h3>What it changed</h3>
-      <p style="margin:0">Honestly, not much overall: validation F1 moved from 76.28 to 76.50. But organization F1 rose by <b>4.6 to 6.4 points</b> in all four comparisons, and it recovered a country name that had been missed at the end of a long article. Organization names are long, so they are the most likely to be cut in half. We kept the windows because they remove a systematic blind spot and have no settings to tune.</p>
+      <p style="margin:0">Overall, little: validation F1 moved from 76.28 to 76.50. But organization F1 rose by <b>4.6 to 6.4 points</b> in all four comparisons, and it recovered a country name that had been missed at the end of a long article. Organization names are long, so they are the most likely to be cut in half. We kept the windows because they remove a systematic blind spot and have no settings to tune.</p>
     </div>
-    <div class="card">
+    <div class="block">
       <h3>Where the rule comes from</h3>
       <p style="margin:0">The "most context on the weaker side" rule is the one Google's original BERT code uses for question answering over long documents (<code>_check_is_max_context</code> in BERT's SQuAD script). Neam applies it to named entity recognition, builds windows from whole words, advances them by about half a window, and right-aligns the last one so it stays full.</p>
     </div>
@@ -151,21 +136,19 @@ for piece in segmenter(clean):
   <div class="eyebrow">Step 3</div>
   <h2>Back to the exact characters</h2>
   <div class="plain"><b>In plain words:</b> the model labels words, but people need the exact characters: where a name starts and ends in their text. Two bugs in this last step made correct answers look wrong. Finding them was worth more than many rounds of training.</div>
-  <div class="grid2">
-    <div class="card lesson">
+  <div class="block">
+    <div class="block">
       <h3>The scorer was dropping punctuation</h3>
-      <div class="num"><s>54.90</s>69.03</div>
-      <p class="small muted">validation F1, same model weights</p>
+      <p class="small muted">Validation F1 54.90 → 69.03, same model weights.</p>
       <p style="margin:0">Turning word labels back into spans dropped punctuation inside names, such as the dots in an initialism ("U.S.A." came back as "U.S.A"), and mishandled prefixes. Under exact matching, those correct predictions counted as errors. Fixing it before any retraining raised the baseline by 14 points.</p>
     </div>
-    <div class="card lesson">
+    <div class="block">
       <h3>Names that crossed a line break</h3>
-      <div class="num"><s>86.70</s>86.98</div>
-      <p class="small muted">held-out F1, same model (release 0.2.1)</p>
+      <p class="small muted">Held-out F1 86.70 → 86.98, same model (release 0.2.1).</p>
       <p style="margin:0">Articles are imported line by line, but a name could still be joined across a line break, gluing the end of one paragraph to the start of the next. Since 0.2.1, a name never spans a line break, and the article importer trims menu lines at the edges of Khmer pages.</p>
     </div>
   </div>
-  <div class="card" style="margin-top:16px">
+  <div class="block">
     <h3>The lesson</h3>
     <p style="margin:0">Check the path from model output to score before training anything new. Every Neam model is scored through exactly the same code the app uses (segmentation, windows, decoding, reconstruction and display rules), so a fix here applies to every model and every number.</p>
   </div>
@@ -184,24 +167,12 @@ for piece in segmenter(clean):
   </div>
 </div></section>
 
-<section><div class="wrap">
-  <div class="pager">
-    <a href="../subword-alignment/"><div class="card"><small>← Previous</small><b>Reading each word from its meaningful piece</b></div></a>
-    <a href="../"><div class="card" style="text-align:right"><small>All case studies →</small><b>Case studies</b></div></a>
-  </div>
-</div></section>
-<div class="end"><div class="wrap">Numbers are from the Neam preprint and release notes. Segmentation, windows and tags on this page were generated with the released model and code.</div></div>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
 
 <script>
-(function(){
-  const root=document.documentElement, btn=document.getElementById('theme');
-  try{const t=localStorage.getItem('neam-theme'); if(t) root.dataset.theme=t;}catch(e){}
-  btn.addEventListener('click',()=>{
-    const dark=root.dataset.theme? root.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-    root.dataset.theme=dark?'light':'dark';
-    try{localStorage.setItem('neam-theme',root.dataset.theme);}catch(e){}
-  });
-})();
 const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
 // ---- Step 1: hidden characters

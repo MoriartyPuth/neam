@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cite, license and credits · Neam</title>
+<meta name="description" content="How to cite Neam, its license, and the work it is built on.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600&family=Noto+Serif+Khmer:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body data-root="../../" data-page="docs/cite/">
+<div class="layout">
+<aside class="sidebar" id="sidebar" aria-label="Docs pages"></aside>
+<main class="prose">
+<h1>Cite, license and credits</h1>
+<p class="lead">How to cite Neam, its license, and the work it is built on.</p>
+<h2 id="cite">Cite</h2>
+<div class="code"><div class="bar"><span>BibTeX</span><button class="copy" type="button">Copy</button></div><pre data-lang="text">@misc{puthcambo2026neam,
+  title  = {Neam: Open Named Entity Recognition for Khmer News with a Small {ALBERT} Ensemble},
+  author = {{Eav Puthcambo}},
+  year   = {2026},
+  note   = {Preprint, ResearchGate},
+  url    = {https://www.researchgate.net/publication/417187812}
+}</pre></div>
+<div class="btns" style="margin-bottom:8px">
+<a class="btn primary" href="https://www.researchgate.net/publication/417187812_Neam_Open_Named_Entity_Recognition_for_Khmer_News_with_a_Small_ALBERT_Ensemble">Paper</a>
+<a class="btn" href="https://github.com/MoriartyPuth/neam">GitHub</a>
+<a class="btn" href="https://huggingface.co/MoriartyPuth/neam">Hugging Face</a>
+<a class="btn" href="https://pypi.org/project/neam/">PyPI</a>
+</div>
+
+<h2 id="license">License</h2>
+<p>Neam's code and model weights are released under the <b>Apache License 2.0</b>. Third-party attributions are in the <a href="https://github.com/MoriartyPuth/neam/blob/main/NOTICE">NOTICE</a> file.</p>
+
+<h2 id="credits">Built on the work of</h2>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Work</th><th>By</th><th>Used for</th></tr></thead><tbody><tr><td><a href="https://huggingface.co/seanghay/albert-khmer-small">Khmer ALBERT small</a></td><td>Seanghay Yath (Cambodia)</td><td>The pretrained Khmer model every member is fine-tuned from. Apache-2.0.</td></tr><tr><td><a href="https://github.com/VietHoang1512/khmer-nltk">khmer-nltk</a></td><td>Phan Viet Hoang</td><td>Word splitting at run time. Its README cites Khmer CRF segmentation research by Vichet Chea et al. (NIPTICT, Phnom Penh) and articles by Phylypo Tum.</td></tr><tr><td><a href="https://huggingface.co/datasets/whoisjones/fiNERweb">FiNERweb</a></td><td>Golde, Haller and Akbik</td><td>General Khmer training data. MIT.</td></tr><tr><td><a href="https://huggingface.co/datasets/unimelb-nlp/wikiann">WikiANN</a></td><td>Pan et al.; Rahimi et al.</td><td>General Khmer training data, from Wikipedia.</td></tr><tr><td>ALBERT, SentencePiece, BERT</td><td>Google Research</td><td>The architecture, the tokenizer and the long-document window rule.</td></tr><tr><td>Khmer news</td><td>Fresh News, Kampuchea Thmey, Khmer Press</td><td>News articles for training and testing. Their text is not redistributed; only positions are stored.</td></tr></tbody></table></div>
+<nav id="pager" aria-label="Previous and next page"></nav>
+</main>
+</div>
+<script src="../../assets/site.js"></script>
+</body>
+</html>
