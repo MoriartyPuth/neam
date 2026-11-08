@@ -54,6 +54,20 @@ python -m neam.inference --text "ក្រសួងអប់រំ យុវជ�
 Each entity has `label`, `text`, `start`, `end` (Python character offsets into the input) and
 `score`, the model's mean confidence, which is not a calibrated probability.
 
+## Server mode
+
+Other programs can run Neam as a child process and exchange one JSON object per line
+over stdin/stdout:
+
+```bash
+python -m neam.serve --model MoriartyPuth/neam
+{"id": 1, "method": "segment", "params": {"text": "ខ្ញុំចូលចិត្តអាន។"}}
+```
+
+`info`, `segment` and `analyze` are available, with code-point offsets and structured
+errors. See [docs/serve.md](docs/serve.md) for the protocol and for building the
+single-member *Neam lite* folder.
+
 ## Web app
 
 The web app is `app.py` in this repository. Run it from a clone after `pip install -e ".[app]"`:
