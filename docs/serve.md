@@ -16,6 +16,7 @@ python -m neam.serve --model ./neam-lite --device cpu --threads 2
 | `--device` | `cuda` if available, else `cpu` | Torch device |
 | `--threads` | torch default | CPU threads for inference |
 | `--max-chars` | 20000 | Longest accepted `text` |
+| `--backend` | `onnx` if the model has `model.onnx`, else `torch` | Inference backend (see below) |
 
 ## Transport
 
@@ -111,3 +112,43 @@ python -m neam.serve --model ./neam-lite
 `m4-s46` is the member that agrees most closely with the full ensemble on unlabelled
 text (`scripts/member_agreement.py`). It is about 37 MB and needs about 1/7 of the
 ensemble's compute. Its accuracy on the gold sets has not yet been measured or published.
+
+## Running without PyTorch (ONNX)
+
+`scripts/export_onnx.py` converts members to ONNX. It checks every member against
+PyTorch and refuses to write the folder if any probability differs by more than 1e-4:
+
+```bash
+python scripts/export_onnx.py --members m4-s46 --output neam-lite-onnx   # needs torch
+```
+
+A folder whose members contain `model.onnx` runs on ONNX Runtime automatically, and
+then needs no PyTorch at all. A plain `pip install neam` is enough:
+
+```bash
+pip install neam
+python -m neam.serve --model ./neam-lite-onnx
+```
+
+For apps that bundle Neam, `requirements-slim.txt` also leaves out SciPy and
+scikit-learn, which khmer-nltk declares but its segmenter does not use. Segmentation
+was verified identical on 46k characters:
+
+```bash
+pip install -r requirements-slim.txt
+pip install --no-deps khmer-nltk sklearn-crfsuite neam
+```
+
+Measured on a Ryzen 7 6800H with 4 threads, on about 9,000 characters of Khmer
+Wikipedia and news text:
+
+| | PyTorch | ONNX |
+|---|---:|---:|
+| Entities and per-word tags | — | **identical** (lite: 118 entities, full: 115) |
+| Lite (1 member), 9k characters | 4.5 s | 2.7 s |
+| Full ensemble (7 members), 9k characters | 29.9 s | 19.0 s |
+| Server peak memory (lite) | 534 MB | 319 MB (228 MB slim) |
+| Server start → analyze → exit (lite) | 5.1 s | 4.2 s (1.3 s slim) |
+| Python environment | 1.3 GB | 381 MB (248 MB slim) |
+
+The ONNX backend runs on the CPU only.

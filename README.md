@@ -22,14 +22,18 @@ details and limitations.
 ## Install
 
 ```bash
-pip install neam            # library
-pip install "neam[app]"     # plus the web app
+pip install "neam[torch]"          # library with the PyTorch backend
+pip install "neam[torch,app]"      # plus the web app
+pip install neam                   # ONNX Runtime only, no PyTorch (needs ONNX models)
 ```
 
-Python 3.10+. Install the PyTorch build that suits your machine first if you want GPU support.
+Python 3.10+. Since 0.3.0, PyTorch is an optional extra. Plain `pip install neam` runs
+models that include `model.onnx` (see [Running without PyTorch](docs/serve.md#running-without-pytorch-onnx)).
+The published Hub model currently has PyTorch weights only, so it needs `neam[torch]`.
+Install the PyTorch build that suits your machine first if you want GPU support.
 The model (about 265 MB) downloads from the Hugging Face Hub on first use.
 
-To work on the code itself, clone the repository and run `pip install -e ".[app]"`.
+To work on the code itself, clone the repository and run `pip install -e ".[torch,app]"`.
 
 ## Use
 
@@ -65,8 +69,9 @@ python -m neam.serve --model MoriartyPuth/neam
 ```
 
 `info`, `segment` and `analyze` are available, with code-point offsets and structured
-errors. See [docs/serve.md](docs/serve.md) for the protocol and for building the
-single-member *Neam lite* folder.
+errors. See [docs/serve.md](docs/serve.md) for the protocol, for building the
+single-member *Neam lite* folder, and for running on ONNX Runtime without PyTorch
+(identical predictions, about 1.6× faster, and a 248 MB environment instead of 1.3 GB).
 
 ## Web app
 

@@ -1,0 +1,18 @@
+# Smallest Neam runtime (ONNX backend, no PyTorch, no SciPy/scikit-learn), for apps
+# that bundle Neam. Two steps:
+#
+#   pip install -r requirements-slim.txt
+#   pip install --no-deps khmer-nltk sklearn-crfsuite neam
+#
+# khmer-nltk's segmenter is a python-crfsuite model; sklearn-crfsuite declares
+# scikit-learn but falls back without it, so segmentation is unchanged (verified on
+# 46k characters). `pip check` will report scikit-learn as missing; that is expected.
+# Models must include model.onnx (scripts/export_onnx.py).
+transformers>=4.35,<5
+huggingface_hub>=0.34,<1.0
+regex
+onnxruntime>=1.17
+numpy
+python-crfsuite>=0.9.7
+tabulate
+tqdm

@@ -1,8 +1,13 @@
 """Inference, alignment and article-import tests for Neam (no model download needed)."""
+import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
+
+HAVE_TORCH = importlib.util.find_spec('torch') is not None
+HAVE_GRADIO = importlib.util.find_spec('gradio') is not None
+HAVE_BS4 = importlib.util.find_spec('bs4') is not None
 
 from neam.inference import (collect_entities, expand_entity_boundaries,
                             prepare_display_tags, repair_iob2)
@@ -11,6 +16,7 @@ from neam.preprocess import (LABELS, Word, align_labels, encode_chunks, normaliz
 
 
 class PreprocessingTests(unittest.TestCase):
+    @unittest.skipUnless(HAVE_BS4, 'article import needs beautifulsoup4')
     def test_article_extraction_and_private_url_rejection(self):
         from neam.articles import _validate_public_url, article_text_from_html
         html = '<nav>Menu</nav><article><h1>ព័ត៌មាន</h1><p>លោក សុខា នៅភ្នំពេញ។</p></article><script>x()</script>'
@@ -219,6 +225,7 @@ class IntegrationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             encode_chunks(tokenizer, words, ['B-PER'] + ['I-PER'] * 6, max_length=8)
 
+    @unittest.skipUnless(HAVE_TORCH, 'needs the torch extra')
     def test_train_save_reload_predict(self):
         import torch
         from transformers import BertConfig, BertForTokenClassification, DataCollatorForTokenClassification
@@ -310,6 +317,7 @@ class IntegrationTests(unittest.TestCase):
 
 
 class AppTests(unittest.TestCase):
+    @unittest.skipUnless(HAVE_GRADIO, 'needs the app extra')
     def test_app_builds_with_url_import_only(self):
         import app
         demo = app.create_app('unused-model-path')  # the model loads lazily on first prediction
