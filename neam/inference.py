@@ -35,6 +35,10 @@ ENSEMBLE_SETTINGS = {
 }
 # disjoint: back-to-back windows; overlap: each word read in its most central window.
 CONTEXT_WINDOWS = ('disjoint', 'overlap')
+# torch: PyTorch checkpoints (model.safetensors). onnx: ONNX Runtime on CPU, using a
+# model.onnx exported next to each member's config (scripts/export_onnx.py).
+BACKENDS = ('torch', 'onnx')
+ONNX_FILE = 'model.onnx'
 # "ជនជាតិ X" names a nationality or people group, which is O under the three-label
 # policy; X alone as a place stays LOC. Interim display rule until training data
 # teaches the distinction; strict model tags are unchanged.
@@ -297,6 +301,17 @@ def load_ensemble_spec(model_path):
     return members, {key: spec[key] for key in ENSEMBLE_SETTINGS if key in spec}
 
 
+def detect_backend(members):
+    """ONNX when every member folder has model.onnx and onnxruntime is installed."""
+    if all((Path(member) / ONNX_FILE).exists() for member in members):
+        try:
+            import onnxruntime  # noqa: F401
+            return 'onnx'
+        except ModuleNotFoundError:
+            pass
+    return 'torch'
+
+
 def resolve_model_path(model=DEFAULT_MODEL, revision=None):
     """Return a local folder: the path itself, or a Hugging Face Hub snapshot of the model ID."""
     if Path(model).exists():
@@ -312,31 +327,40 @@ class Neam:
     def from_pretrained(cls, model=DEFAULT_MODEL, **kwargs):
         return cls(model, **kwargs)
 
-    def __init__(self, model=DEFAULT_MODEL, device=None, max_length=None, revision=None):
-        import torch
-        from transformers import AutoModelForTokenClassification, AutoTokenizer
+    def __init__(self, model=DEFAULT_MODEL, device=None, max_length=None, revision=None,
+                 backend=None, threads=None):
+        """Load a model folder or Hub ID.
+
+        ``backend`` is ``'torch'``, ``'onnx'`` or None (ONNX when every member has a
+        model.onnx and onnxruntime is installed, otherwise PyTorch). ``threads`` sets
+        the CPU threads used for inference.
+        """
+        from transformers import AutoTokenizer
         model_path = resolve_model_path(model, revision)
         members, overrides = load_ensemble_spec(model_path)
         self.ensemble = len(members) > 1 or bool(overrides)
+        self.backend = backend or detect_backend(members)
+        if self.backend not in BACKENDS:
+            raise ValueError(f'Unknown backend: {self.backend!r}')
         # Keep the exact SentencePiece behavior used for training. Passing False also
         # avoids a Transformers 4.57.6 false-positive Mistral-regex warning for XLM-R.
         self.tokenizer = AutoTokenizer.from_pretrained(
             members[0], use_fast=True, fix_mistral_regex=False)
-        self.device = torch.device(device or ('cuda' if torch.cuda.is_available() else 'cpu'))
-        self.models = [AutoModelForTokenClassification.from_pretrained(member).to(self.device).eval()
-                       for member in members]
-        self.model = self.models[0]
-        config = self.model.config
+        if self.backend == 'onnx':
+            configs = self._load_onnx(members, device, threads)
+        else:
+            configs = self._load_torch(members, device, threads)
+        config = configs[0]
         self.id2label = {int(k): v for k, v in config.id2label.items()}
         if set(self.id2label.values()) != set(LABELS) or len(self.id2label) != len(LABELS):
             raise ValueError('Model must be fine-tuned with the seven PER/ORG/LOC IOB2 labels.')
         self.max_length = max_length or getattr(config, 'khmer_ner_max_length', 256)
         # Older checkpoints record no position and were trained on the first piece.
         self.label_position = getattr(config, 'khmer_ner_label_position', FIRST_SUBWORD)
-        for member, model in zip(members[1:], self.models[1:]):
-            if ({int(k): v for k, v in model.config.id2label.items()} != self.id2label
-                    or getattr(model.config, 'khmer_ner_label_position', FIRST_SUBWORD) != self.label_position
-                    or model.config.vocab_size != config.vocab_size):
+        for member, member_config in zip(members[1:], configs[1:]):
+            if ({int(k): v for k, v in member_config.id2label.items()} != self.id2label
+                    or getattr(member_config, 'khmer_ner_label_position', FIRST_SUBWORD) != self.label_position
+                    or member_config.vocab_size != config.vocab_size):
                 raise ValueError(f'Ensemble member {member} does not match {members[0]}.')
         settings = {key: getattr(config, name, None) for key, name in ENSEMBLE_SETTINGS.items()}
         settings.update(overrides)
@@ -350,6 +374,46 @@ class Neam:
         if self.context_windows not in CONTEXT_WINDOWS:
             raise ValueError(f'Unknown context windows: {self.context_windows!r}')
 
+    def _load_torch(self, members, device, threads):
+        try:
+            import torch
+        except ModuleNotFoundError as exc:
+            if exc.name != 'torch':
+                raise
+            raise RuntimeError(
+                'This model has no ONNX export (model.onnx), so it needs PyTorch: '
+                'pip install "neam[torch]". Or convert it once with scripts/export_onnx.py.') from exc
+        from transformers import AutoModelForTokenClassification
+        if threads:
+            torch.set_num_threads(threads)
+        self.device = torch.device(device or ('cuda' if torch.cuda.is_available() else 'cpu'))
+        self.models = [AutoModelForTokenClassification.from_pretrained(member).to(self.device).eval()
+                       for member in members]
+        self.model = self.models[0]
+        return [model.config for model in self.models]
+
+    def _load_onnx(self, members, device, threads):
+        try:
+            import onnxruntime
+        except ModuleNotFoundError as exc:
+            raise RuntimeError('The onnx backend needs onnxruntime: pip install onnxruntime') from exc
+        from transformers import AutoConfig
+        if device not in (None, 'cpu'):
+            raise ValueError('The onnx backend runs on the CPU only.')
+        self.device = 'cpu'
+        options = onnxruntime.SessionOptions()
+        if threads:
+            options.intra_op_num_threads = threads
+        self.models = []
+        for member in members:
+            path = Path(member) / ONNX_FILE
+            if not path.exists():
+                raise FileNotFoundError(f'{path} not found; export it with scripts/export_onnx.py.')
+            self.models.append(onnxruntime.InferenceSession(
+                str(path), options, providers=['CPUExecutionProvider']))
+        self.model = self.models[0]
+        return [AutoConfig.from_pretrained(member) for member in members]
+
     def _windows(self, words):
         if self.context_windows == 'overlap':
             return encode_context_windows(self.tokenizer, words, max_length=self.max_length)
@@ -357,6 +421,8 @@ class Neam:
                 in encode_chunks(self.tokenizer, words, max_length=self.max_length)]
 
     def predict_word_probabilities(self, words):
+        if self.backend == 'onnx':
+            return self._onnx_word_probabilities(words)
         import torch
         probabilities_by_word = [None] * len(words)
         with torch.inference_mode():
@@ -368,6 +434,28 @@ class Neam:
                 for word in owned:
                     probabilities_by_word[word] = [
                         float(value) for value in probabilities[positions[word - start]]]
+        if any(row is None for row in probabilities_by_word):
+            raise RuntimeError('Inference word coverage mismatch.')
+        return probabilities_by_word
+
+    def _onnx_word_probabilities(self, words):
+        import numpy as np
+        probabilities_by_word = [None] * len(words)
+        for start, end, chunk, ids, owned in self._windows(words):
+            rows = []
+            for session in self.models:
+                names = {i.name for i in session.get_inputs()}
+                feeds = {key: np.asarray([value], dtype=np.int64)
+                         for key, value in chunk.items() if key in names}
+                logits = session.run(None, feeds)[0][0].astype(np.float64)
+                logits -= logits.max(-1, keepdims=True)
+                exp = np.exp(logits)
+                rows.append(exp / exp.sum(-1, keepdims=True))
+            probabilities = np.mean(rows, axis=0)
+            positions = word_label_positions(ids, chunk.tokens(), self.label_position)
+            for word in owned:
+                probabilities_by_word[word] = [
+                    float(value) for value in probabilities[positions[word - start]]]
         if any(row is None for row in probabilities_by_word):
             raise RuntimeError('Inference word coverage mismatch.')
         return probabilities_by_word

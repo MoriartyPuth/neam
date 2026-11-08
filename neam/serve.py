@@ -13,7 +13,7 @@ import threading
 import traceback
 
 from neam import __version__
-from neam.inference import DEFAULT_MODEL, Neam
+from neam.inference import BACKENDS, DEFAULT_MODEL, Neam
 from neam.preprocess import segment_document
 
 PROTOCOL = 1
@@ -182,6 +182,8 @@ def main(argv=None):
     parser.add_argument('--revision', default=None, help='Hub revision (ignored for local folders)')
     parser.add_argument('--device', default=None, help='Torch device, e.g. cpu (default: cuda if available)')
     parser.add_argument('--threads', type=int, default=None, help='CPU threads for inference')
+    parser.add_argument('--backend', choices=BACKENDS, default=None,
+                        help='Inference backend (default: onnx if the model has model.onnx, else torch)')
     parser.add_argument('--max-chars', type=int, default=DEFAULT_MAX_CHARS)
     args = parser.parse_args(argv)
     if args.max_chars < 1:
@@ -192,10 +194,10 @@ def main(argv=None):
     os.environ.setdefault('TOKENIZERS_PARALLELISM', 'false')
 
     def load():
-        if args.threads:
-            import torch
-            torch.set_num_threads(args.threads)
-        return Neam(args.model, device=args.device, revision=args.revision)
+        ner = Neam(args.model, device=args.device, revision=args.revision,
+                   backend=args.backend, threads=args.threads)
+        log.info('backend: %s, members: %d', ner.backend, len(ner.models))
+        return ner
 
     name = f'{args.model}@{args.revision}' if args.revision else args.model
     server = Server(load, name, max_chars=args.max_chars)
